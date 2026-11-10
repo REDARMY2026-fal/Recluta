@@ -4,7 +4,8 @@ try{state={...defaultState,...JSON.parse(localStorage.getItem("recluta-save")||"
 const ranks=["Recluta","Soldado","Cabo","Sargento","Teniente","Capitán","Mayor","Coronel","General"];
 const $=id=>document.getElementById(id);
 function save(){try{localStorage.setItem("recluta-save",JSON.stringify(state))}catch(error){console.warn("No se pudo guardar el progreso en este navegador.",error)}render()}
-function xpNeeded(){return state.level*100}\nfunction rank(){return ranks[Math.min(Math.floor((state.level-1)/2),ranks.length-1)]}
+function xpNeeded(){return state.level*100}
+function rank(){return ranks[Math.min(Math.floor((state.level-1)/2),ranks.length-1)]}
 function render(){
  $("rank").textContent=rank().toUpperCase();$("profile-rank").textContent=rank();$("level").textContent=String(state.level).padStart(2,"0");$("xp").textContent=state.xp;$("completed").textContent=state.completed;$("xp-next").textContent=`${state.xp} / ${xpNeeded()} XP para el próximo nivel`;$("xp-progress-label").textContent=`${state.xp} / ${xpNeeded()} XP`;$("xp-progress-bar").style.width=`${Math.min(100,state.xp/xpNeeded()*100)}%`;
  $("skills").innerHTML=Object.entries(state.skills).map(([name,value])=>`<div><div class="skill-head"><span>${name.toUpperCase()}</span><b>NIV. ${value}</b></div><div class="bar"><span style="width:${Math.min(value*10,100)}%"></span></div></div>`).join("");
