@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#151b16">
-  <title>RECLUTA | Centro de entrenamiento</title><link rel="stylesheet" href="style.css?v=7">
+  <title>RECLUTA | Centro de entrenamiento</title><link rel="stylesheet" href="style.css?v=8">
 </head>
 <body>
 <section id="lobby" class="lobby">
@@ -34,6 +34,7 @@
     <div class="side-label">CENTRO DE MANDO</div>
     <button class="nav active" data-section="inicio">▦ <span>Resumen</span></button>
     <button class="nav" data-section="equipo">♟ <span>Mi equipo</span></button>
+    <button class="nav" data-section="operaciones">◈ <span>Operaciones</span></button>
     <button class="nav" data-section="entrenamiento">◎ <span>Entrenamiento</span></button>
     <button class="nav" data-section="perfil">♙ <span>Mi expediente</span></button>
     <div class="sidebar-bottom"><span class="status-dot"></span> SISTEMA OPERATIVO<small>VERSIÓN 0.2.0</small></div>
@@ -61,6 +62,12 @@
       <div class="team-actions"><p id="team-message" class="muted">Seleccioná tres integrantes para confirmar tu equipo.</p><button id="confirm-team" class="primary" disabled>CONFIRMAR EQUIPO →</button></div>
       <div class="panel chosen-panel"><span class="eyebrow">TU ESCUADRÓN</span><h3>Integrantes confirmados</h3><div id="chosen-list" class="muted">Aún no hay integrantes confirmados.</div></div>
     </section>
+    <section id="operaciones" class="page">
+      <div class="section-heading"><div><span class="eyebrow">CENTRO DE MISIONES · CAMPAÑA 2026</span><h2>Operaciones</h2><p class="muted">Las decisiones de tu equipo determinan cómo se desarrolla cada misión.</p></div></div>
+      <div class="operation-banner panel"><div><span class="eyebrow">OPERACIÓN 001 · DISPONIBLE</span><h2>PRIMER DESTINO</h2><p>Una tormenta afectó a varias localidades. La academia asignó a tu equipo una misión de apoyo: organizar suministros, coordinar información y ayudar a que la asistencia llegue a quienes la necesitan.</p><div class="operation-meta"><span>TIPO: ASISTENCIA Y LOGÍSTICA</span><span>DIFICULTAD: INICIAL</span><span>RECOMPENSA: 15–30 XP</span></div></div><div class="operation-seal">01</div></div>
+      <div class="panel operation-brief"><span class="eyebrow">ESTADO DE LA MISIÓN</span><h3 id="operation-status">Esperando asignación</h3><p id="operation-summary" class="muted">Revisá el informe y prepará a tu equipo.</p><div id="operation-content"><button class="primary" id="begin-operation">INICIAR OPERACIÓN →</button></div></div>
+      <div class="panel operation-record"><span class="eyebrow">REGISTRO DE CAMPAÑA</span><h3>Operaciones completadas</h3><div id="operation-history" class="muted">Todavía no completaste ninguna operación.</div></div>
+    </section>
     <section id="entrenamiento" class="page">
       <div class="section-heading"><div><span class="eyebrow">ÁREA DE INSTRUCCIÓN</span><h2>Pruebas disponibles</h2><p class="muted">Desafíos de lógica, memoria, coordinación y organización.</p></div></div>
       <div class="training-grid">
@@ -76,5 +83,5 @@
     <footer>RECLUTA ACADEMY <span>SIMULADOR DE ENTRENAMIENTO · 2026</span></footer>
   </main>
 </div>
-<script src="script.js?v=7"></script>
+<script src="script.js?v=8"></script>
 </body></html>
