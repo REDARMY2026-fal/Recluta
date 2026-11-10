@@ -89,7 +89,7 @@ function beginOperation(){
 }
 function showOperationStep(){
  const step=operationSteps[operationChoice];
- $("operation-status").textContent="Operación en curso · Etapa "+(operationChoice+1)+"/3;
+ $("operation-status").textContent="Operación en curso · Etapa "+(operationChoice+1)+"/3";
  $("operation-summary").textContent="Equipo asignado: "+state.team.map(id=>candidates.find(c=>c.id===id)?.name).join(", ");
  $("operation-content").innerHTML=`<div class="operation-progress"><span style="width:${(operationChoice/3)*100}%"></span></div><h3>${step.title}</h3><p>${step.text}</p><div class="operation-choices">${step.choices.map((c,i)=>`<button class="operation-choice" data-operation-choice="${i}">${c.label}</button>`).join("")}</div><p class="operation-feedback" id="operation-feedback"></p>`;
  document.querySelectorAll("[data-operation-choice]").forEach(b=>b.onclick=()=>chooseOperation(Number(b.dataset.operationChoice)));
@@ -112,8 +112,9 @@ function completeOperation(){
  $("return-operations").onclick=renderOperations;renderOperations();
 }
 $("begin-operation").addEventListener("click",beginOperation);
-\nfunction enterGame(){ $("lobby").hidden=true;$("game-app").hidden=false;showPage(state.teamConfirmed?"inicio":"equipo");window.scrollTo({top:0,behavior:"smooth"}); }
-$("new-game").addEventListener("click",()=>{if(localStorage.getItem("recluta-save")&&!confirm("¿Empezar una partida nueva? El progreso local actual se reemplazará."))return;state={xp:0,level:1,completed:0,skills:{Disciplina:1,Resistencia:1,Inteligencia:1,Coordinación:1,Liderazgo:1},history:[],team:[],teamConfirmed:false,campaignMonth:0,campaignLog:[]};selectedTeam=[];save();enterGame()});
+
+function enterGame(){ $("lobby").hidden=true;$("game-app").hidden=false;showPage(state.teamConfirmed?"inicio":"equipo");window.scrollTo({top:0,behavior:"smooth"}); }
+$("new-game").addEventListener("click",()=>{if(localStorage.getItem("recluta-save")&&!confirm("¿Empezar una partida nueva? El progreso local actual se reemplazará."))return;state={xp:0,level:1,completed:0,skills:{Disciplina:1,Resistencia:1,Inteligencia:1,Coordinación:1,Liderazgo:1},history:[],team:[],teamConfirmed:false,campaignMonth:0,campaignLog:[],operations:[],operationProgress:null};selectedTeam=[];save();enterGame()});
 $("continue-game").addEventListener("click",enterGame);
 const lobbyDetailData={
 partidas:["ARCHIVO DE PARTIDAS","Mis partidas",()=>`<div class="detail-stat-grid"><div><b>${state.teamConfirmed?"ACTIVA":"SIN INICIAR"}</b><small>Estado de carrera</small></div><div><b>${campaignDate()}</b><small>Período actual</small></div><div><b>NIVEL ${state.level}</b><small>${state.xp} XP acumulados en el nivel</small></div></div><p>Tu partida se guarda automáticamente en este navegador. Para jugar en otro dispositivo necesitaremos implementar exportación o cuentas con servidor.</p><button class="detail-action" id="detail-continue">ABRIR MI PARTIDA →</button>`],
