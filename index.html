@@ -2,16 +2,30 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#151b16">
-  <title>RECLUTA | Centro de entrenamiento</title><link rel="stylesheet" href="style.css?v=5">
+  <title>RECLUTA | Centro de entrenamiento</title><link rel="stylesheet" href="style.css?v=6">
 </head>
 <body>
 <section id="lobby" class="lobby">
-  <div class="lobby-hero"><div class="lobby-hero-inner"><div class="lobby-copy"><span class="eyebrow">SIMULADOR DE CARRERA · ARGENTINA</span><h1>RECLUTA</h1><h2>Tu carrera empieza acá.</h2><p>Ingresá a la academia, formá tu equipo y construí tu trayectoria desde cadete hasta los rangos más altos.</p><div class="lobby-actions"><button class="lobby-primary" id="new-game">Nueva partida</button><button class="lobby-secondary" id="continue-game">Continuar</button></div></div><div class="lobby-art"><div class="lobby-insignia">R<span>★</span></div><div class="lobby-art-caption">ACADEMIA · ARGENTINA</div></div></div></div>
-  <div class="lobby-content"><div class="lobby-menu">
-    <button class="lobby-tile" data-lobby-info="partidas">▤ <span>Mis partidas</span></button><button class="lobby-tile" data-lobby-info="logros">★ <span>Logros</span></button><button class="lobby-tile" data-lobby-info="historial">◴ <span>Historial</span></button>
-    <button class="lobby-tile" data-lobby-info="ayuda">? <span>Cómo se juega</span></button><button class="lobby-tile" data-lobby-info="planes">✦ <span>Planes futuros</span></button><button class="lobby-tile" data-lobby-info="ajustes">⚙ <span>Ajustes</span></button>
-    <button class="lobby-tile" data-lobby-info="contacto">✉ <span>Contacto</span></button><div class="lobby-tile lobby-status">● <span>Modo individual · Guardado local</span></div>
-  </div><div class="lobby-trajectory"><h3>Tu trayectoria</h3><div class="trajectory-stats"><div><strong id="lobby-level">01</strong><span>NIVEL ACTUAL</span></div><div><strong id="lobby-xp">0</strong><span>EXPERIENCIA XP</span></div><div><strong id="lobby-completed">0</strong><span>PRUEBAS COMPLETADAS</span></div></div><p id="lobby-message">Tu historia todavía no comenzó. Iniciá una partida para empezar tu carrera.</p></div></div>
+  <header class="lobby-top"><div class="lobby-brand"><span class="lobby-brand-mark">R</span><span>RECLUTA<small>ACADEMIA DE FORMACIÓN</small></span></div><div class="lobby-top-status"><i></i> SISTEMA DE CAMPAÑA <b>V. 0.3</b></div></header>
+  <div class="lobby-hero"><div class="lobby-hero-inner">
+    <div class="lobby-copy"><span class="lobby-kicker">ARGENTINA · PROGRAMA DE FORMACIÓN 2026</span><h1>EL PRÓXIMO<br><em>ASCENSO</em><br>DEPENDE DE VOS.</h1><p>Entrá a la academia. Elegí a tu equipo. Tomá decisiones y construí tu carrera desde el primer día.</p><div class="lobby-actions"><button class="lobby-primary" id="new-game">INICIAR CARRERA <span>↗</span></button><button class="lobby-secondary" id="continue-game">CONTINUAR PARTIDA</button></div><div class="lobby-note"><span class="lobby-note-line"></span> UNA CAMPAÑA. TUS DECISIONES. TU HISTORIA.</div></div>
+    <div class="lobby-visual"><div class="lobby-visual-grid"></div><div class="lobby-big-r">R</div><div class="lobby-stamp">R<br><small>26</small></div><div class="lobby-visual-label">DIVISIÓN DE<br>CADETES <b>01 / AR</b></div><div class="lobby-vertical">RECLUTA · FORMACIÓN · SERVICIO</div></div>
+  </div></div>
+  <div class="lobby-content">
+    <div class="lobby-section-head"><span>01 / CENTRO DE OPERACIONES</span><span>ACCESO Y REGISTROS</span></div>
+    <div class="lobby-menu">
+      <button class="lobby-tile lobby-tile-feature" data-lobby-info="partidas"><b>01</b><span><strong>Mis partidas</strong><small>Administrá tu carrera guardada</small></span><i>↗</i></button>
+      <button class="lobby-tile" data-lobby-info="logros"><b>02</b><span><strong>Logros</strong><small>Medallas y reconocimientos</small></span><i>↗</i></button>
+      <button class="lobby-tile" data-lobby-info="historial"><b>03</b><span><strong>Historial</strong><small>Tu recorrido en la academia</small></span><i>↗</i></button>
+      <button class="lobby-tile" data-lobby-info="ayuda"><b>04</b><span><strong>Manual del cadete</strong><small>Cómo se juega</small></span><i>↗</i></button>
+      <button class="lobby-tile" data-lobby-info="planes"><b>05</b><span><strong>Planes futuros</strong><small>Información sobre el proyecto</small></span><i>↗</i></button>
+      <button class="lobby-tile" data-lobby-info="ajustes"><b>06</b><span><strong>Configuración</strong><small>Preferencias del juego</small></span><i>↗</i></button>
+      <button class="lobby-tile" data-lobby-info="contacto"><b>07</b><span><strong>Contacto</strong><small>Canales oficiales</small></span><i>↗</i></button>
+      <div class="lobby-system"><i></i><span><strong>MODO INDIVIDUAL</strong><small>Partida guardada en este dispositivo</small></span></div>
+    </div>
+    <div class="lobby-trajectory"><div class="lobby-trajectory-title"><span>02 / REGISTRO PERSONAL</span><h2>Tu trayectoria</h2></div><div class="trajectory-stats"><div><strong id="lobby-level">01</strong><span>NIVEL</span></div><div><strong id="lobby-xp">0</strong><span>EXPERIENCIA XP</span></div><div><strong id="lobby-completed">0</strong><span>PRUEBAS SUPERADAS</span></div></div><p id="lobby-message">Todavía no hay registros. Tu carrera empieza cuando estés listo.</p></div>
+    <footer class="lobby-footer"><span>RECLUTA / ACADEMIA DE FORMACIÓN</span><span>PROYECTO INDEPENDIENTE · 2026</span></footer>
+  </div>
 </section>
 <div class="app-shell" id="game-app" hidden>
   <aside class="sidebar">
