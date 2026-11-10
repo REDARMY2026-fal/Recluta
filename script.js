@@ -1,6 +1,6 @@
-const defaultState={xp:0,level:1,completed:0,skills:{Disciplina:1,Resistencia:1,Inteligencia:1,Coordinación:1,Liderazgo:1},history:[],team:[],teamConfirmed:false,campaignMonth:0,campaignLog:[]};
+const defaultState={xp:0,level:1,completed:0,skills:{Disciplina:1,Resistencia:1,Inteligencia:1,Coordinación:1,Liderazgo:1},history:[],team:[],teamConfirmed:false,campaignMonth:0,campaignLog:[],operations:[],operationProgress:null,operations:[],operationProgress:null};
 let state;
-try{state={...defaultState,...JSON.parse(localStorage.getItem("recluta-save")||"{}")};state.skills={...defaultState.skills,...(state.skills||{})};state.history=state.history||[];state.team=Array.isArray(state.team)?state.team:[];state.campaignMonth=Number.isInteger(state.campaignMonth)&&state.campaignMonth>=0?state.campaignMonth:0;state.campaignLog=Array.isArray(state.campaignLog)?state.campaignLog:[];}catch{state={...defaultState}}
+try{state={...defaultState,...JSON.parse(localStorage.getItem("recluta-save")||"{}")};state.skills={...defaultState.skills,...(state.skills||{})};state.history=state.history||[];state.team=Array.isArray(state.team)?state.team:[];state.campaignMonth=Number.isInteger(state.campaignMonth)&&state.campaignMonth>=0?state.campaignMonth:0;state.campaignLog=Array.isArray(state.campaignLog)?state.campaignLog:[];state.operations=Array.isArray(state.operations)?state.operations:[];state.operationProgress=state.operationProgress||null;}catch{state={...defaultState}}
 const ranks=["Recluta","Soldado","Cabo","Sargento","Teniente","Capitán","Mayor","Coronel","General"];
 const candidates=[
 {id:"martin",name:"Martín Sosa",age:21,role:"Logística",trait:"Organizado · responsable · detallista",strength:"Planificación y control de suministros",weakness:"A veces piensa demasiado antes de actuar.",skill:"PLAN B",bio:"Ayudaba en el negocio familiar y aprendió a resolver problemas con recursos limitados.",quote:"«Si tenemos un plan, también tenemos que tener una alternativa.»",bonus:"Mejor criterio en desafíos de organización."},
@@ -36,8 +36,8 @@ let selectedTeam=state.teamConfirmed?[...state.team]:[];
 function toggleCandidate(id){if(selectedTeam.includes(id)){selectedTeam=selectedTeam.filter(x=>x!==id)}else if(selectedTeam.length<3){selectedTeam.push(id)}else{$("team-message").textContent="Ya elegiste tres integrantes. Quitá uno para elegir a otra persona.";return}renderTeam()}
 $("confirm-team").addEventListener("click",()=>{if(selectedTeam.length!==3)return;state.team=[...selectedTeam];state.teamConfirmed=true;save();$("team-message").textContent="Equipo confirmado. ¡Listos para el primer destino!";});
 function award(name,xp,skill){state.xp+=xp;state.completed++;state.skills[skill]=Math.min(10,(state.skills[skill]||1)+1);while(state.xp>=xpNeeded()){state.xp-=xpNeeded();state.level++}state.history.push({name,xp,date:new Date().toLocaleDateString("es-AR")});save()}
-const titles={inicio:"CENTRO DE ENTRENAMIENTO",equipo:"ASIGNACIÓN DE PERSONAL",entrenamiento:"ÁREA DE INSTRUCCIÓN",perfil:"EXPEDIENTE DEL CADETE"};
-function showPage(id){if(id==="entrenamiento"&&!state.teamConfirmed){id="equipo";$("team-message").textContent="Antes de entrenar, confirmá a los tres integrantes de tu equipo."}document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active-page",p.id===id));document.querySelectorAll(".nav").forEach(b=>b.classList.toggle("active",b.dataset.section===id));$("page-title").textContent=titles[id]||titles.inicio}
+const titles={inicio:"CENTRO DE ENTRENAMIENTO",equipo:"ASIGNACIÓN DE PERSONAL",operaciones:"CENTRO DE OPERACIONES",entrenamiento:"ÁREA DE INSTRUCCIÓN",perfil:"EXPEDIENTE DEL CADETE"};
+function showPage(id){if((id==="entrenamiento"||id==="operaciones")&&!state.teamConfirmed){id="equipo";$("team-message").textContent="Antes de entrenar, confirmá a los tres integrantes de tu equipo."}document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active-page",p.id===id));document.querySelectorAll(".nav").forEach(b=>b.classList.toggle("active",b.dataset.section===id));$("page-title").textContent=titles[id]||titles.inicio}
 document.querySelectorAll(".nav").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.section)));
 document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.go)));
 $("start-training").addEventListener("click",()=>showPage(state.teamConfirmed?"entrenamiento":"equipo"));
@@ -56,7 +56,63 @@ function startTest(type){
 function addChoice(box,value,fn){let b=document.createElement("button");b.className="choice";b.textContent=value;b.onclick=fn;box.appendChild(b)}
 function finish(box,correct,name,skill){box.querySelectorAll("button").forEach(b=>b.disabled=true);if(correct){award(name,50,skill);box.insertAdjacentHTML("beforeend",'<p class="feedback">✓ PRUEBA SUPERADA · +50 XP</p>')}else{box.insertAdjacentHTML("beforeend",'<p class="feedback">Prueba no superada. Podés intentarlo nuevamente.</p>')}let again=document.createElement("button");again.className="secondary";again.textContent="VOLVER A ENTRENAMIENTO";again.onclick=()=>{box.innerHTML='<span class="eyebrow">SALA DE PRUEBAS</span><h3>Seleccioná una actividad</h3><p class="muted">Tus resultados se registrarán en tu expediente.</p>'};box.appendChild(again)}
 
-function enterGame(){ $("lobby").hidden=true;$("game-app").hidden=false;showPage(state.teamConfirmed?"inicio":"equipo");window.scrollTo({top:0,behavior:"smooth"}); }
+
+const operationSteps=[
+{title:"1 · ORGANIZAR LA ASISTENCIA",text:"Llegan suministros para varias localidades. ¿Cómo organizás el trabajo?",choices:[
+{label:"Distribuir tareas según las capacidades y revisar prioridades con el equipo.",score:2,feedback:"El equipo se organiza y cada persona sabe qué hacer."},
+{label:"Repartir todo rápidamente sin comprobar las necesidades.",score:0,feedback:"La distribución avanza, pero algunos recursos podrían no ser los adecuados."},
+{label:"Esperar instrucciones para cada detalle.",score:1,feedback:"Se evitan errores, aunque se pierde tiempo de coordinación."}]},
+{title:"2 · INFORMACIÓN INCOMPLETA",text:"Dos informes tienen datos diferentes sobre las necesidades de una localidad. ¿Qué hacés?",choices:[
+{label:"Comparar las fuentes y pedir confirmación antes de actualizar el registro.",score:2,feedback:"La información queda verificada y el equipo evita confusiones."},
+{label:"Elegir el primer informe recibido.",score:0,feedback:"La decisión es rápida, pero se basa en datos no confirmados."},
+{label:"Compartir ambos informes como si fueran definitivos.",score:1,feedback:"El equipo conoce la diferencia, aunque todavía falta verificarla."}]},
+{title:"3 · CIERRE DE LA MISIÓN",text:"Una compañera está sobrecargada y queda una tarea de registro pendiente. ¿Cómo resolvés la situación?",choices:[
+{label:"Redistribuir la tarea y consultar si alguien necesita apoyo.",score:2,feedback:"El equipo termina coordinado y con responsabilidades equilibradas."},
+{label:"Pedirle que termine todo por su cuenta.",score:0,feedback:"La tarea se completa, pero el equipo queda desbalanceado."},
+{label:"Dejar el registro para otro día sin avisar.",score:0,feedback:"Queda información importante sin documentar."}]}
+];
+let operationChoice=0,operationScore=0;
+function renderOperations(){
+ $("operation-history").innerHTML=state.operations.length?state.operations.slice().reverse().map(o=>`<p>✓ ${o.name} · ${o.grade} · +${o.xp} XP <span class="muted">· ${o.date}</span></p>`).join(""):"Todavía no completaste ninguna operación.";
+ const done=state.operations.some(o=>o.id==="first-destination");
+ $("operation-status").textContent=done?"Operación completada":"Esperando asignación";
+ $("operation-summary").textContent=done?"La primera misión ya figura en tu expediente. Próximamente habrá nuevas operaciones.":"Revisá el informe y prepará a tu equipo.";
+ $("begin-operation").textContent=done?"OPERACIÓN COMPLETADA":"INICIAR OPERACIÓN →";
+ $("begin-operation").disabled=done||!state.teamConfirmed;
+ $("begin-operation").onclick=beginOperation;
+}
+function beginOperation(){
+ if(!state.teamConfirmed){showPage("equipo");return}
+ if(state.operations.some(o=>o.id==="first-destination"))return;
+ operationChoice=0;operationScore=0;
+ showOperationStep();
+}
+function showOperationStep(){
+ const step=operationSteps[operationChoice];
+ $("operation-status").textContent="Operación en curso · Etapa "+(operationChoice+1)+"/3;
+ $("operation-summary").textContent="Equipo asignado: "+state.team.map(id=>candidates.find(c=>c.id===id)?.name).join(", ");
+ $("operation-content").innerHTML=`<div class="operation-progress"><span style="width:${(operationChoice/3)*100}%"></span></div><h3>${step.title}</h3><p>${step.text}</p><div class="operation-choices">${step.choices.map((c,i)=>`<button class="operation-choice" data-operation-choice="${i}">${c.label}</button>`).join("")}</div><p class="operation-feedback" id="operation-feedback"></p>`;
+ document.querySelectorAll("[data-operation-choice]").forEach(b=>b.onclick=()=>chooseOperation(Number(b.dataset.operationChoice)));
+}
+function chooseOperation(index){
+ const step=operationSteps[operationChoice],choice=step.choices[index];
+ operationScore+=choice.score;
+ document.querySelectorAll("[data-operation-choice]").forEach(b=>b.disabled=true);
+ $("operation-feedback").textContent=choice.feedback;
+ const next=document.createElement("button");next.className="primary";next.textContent=operationChoice===2?"FINALIZAR OPERACIÓN →":"CONTINUAR →";next.onclick=()=>{operationChoice++;if(operationChoice<3)showOperationStep();else completeOperation()};$("operation-content").appendChild(next);
+}
+function completeOperation(){
+ const xp=operationScore>=5?30:operationScore>=3?20:15;
+ const grade=operationScore>=5?"DESTACADA":operationScore>=3?"SATISFACTORIA":"CON OBSERVACIONES";
+ state.operations.push({id:"first-destination",name:"PRIMER DESTINO",grade,xp,date:campaignDate()});
+ award("Operación: Primer destino",xp,"Liderazgo");
+ $("operation-status").textContent="MISIÓN COMPLETADA · "+grade;
+ $("operation-summary").textContent="La asistencia quedó organizada y el informe fue entregado. El desempeño de tu equipo quedó registrado.";
+ $("operation-content").innerHTML=`<div class="operation-result"><span>RESULTADO FINAL</span><strong>${grade}</strong><b>+${xp} XP</b><p>${operationScore}/6 puntos de coordinación.</p><p>${state.team.map(id=>candidates.find(c=>c.id===id)?.name).join(" · ")} completaron su primera misión con vos.</p></div><button class="secondary" id="return-operations">VOLVER AL CENTRO DE OPERACIONES</button>`;
+ $("return-operations").onclick=renderOperations;renderOperations();
+}
+$("begin-operation").addEventListener("click",beginOperation);
+\nfunction enterGame(){ $("lobby").hidden=true;$("game-app").hidden=false;showPage(state.teamConfirmed?"inicio":"equipo");window.scrollTo({top:0,behavior:"smooth"}); }
 $("new-game").addEventListener("click",()=>{if(localStorage.getItem("recluta-save")&&!confirm("¿Empezar una partida nueva? El progreso local actual se reemplazará."))return;state={xp:0,level:1,completed:0,skills:{Disciplina:1,Resistencia:1,Inteligencia:1,Coordinación:1,Liderazgo:1},history:[],team:[],teamConfirmed:false,campaignMonth:0,campaignLog:[]};selectedTeam=[];save();enterGame()});
 $("continue-game").addEventListener("click",enterGame);
 const lobbyDetailData={
