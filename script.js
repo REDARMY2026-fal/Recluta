@@ -111,7 +111,7 @@ function completeOperation(){
  $("operation-content").innerHTML=`<div class="operation-result"><span>RESULTADO FINAL</span><strong>${grade}</strong><b>+${xp} XP</b><p>${operationScore}/6 puntos de coordinación.</p><p>${state.team.map(id=>candidates.find(c=>c.id===id)?.name).join(" · ")} completaron su primera misión con vos.</p></div><button class="secondary" id="return-operations">VOLVER AL CENTRO DE OPERACIONES</button>`;
  $("return-operations").onclick=renderOperations;renderOperations();
 }
-$("begin-operation").addEventListener("click",beginOperation);
+
 
 function enterGame(){ $("lobby").hidden=true;$("game-app").hidden=false;showPage(state.teamConfirmed?"inicio":"equipo");window.scrollTo({top:0,behavior:"smooth"}); }
 $("new-game").addEventListener("click",()=>{if(localStorage.getItem("recluta-save")&&!confirm("¿Empezar una partida nueva? El progreso local actual se reemplazará."))return;state={xp:0,level:1,completed:0,skills:{Disciplina:1,Resistencia:1,Inteligencia:1,Coordinación:1,Liderazgo:1},history:[],team:[],teamConfirmed:false,campaignMonth:0,campaignLog:[],operations:[],operationProgress:null};selectedTeam=[];save();enterGame()});
