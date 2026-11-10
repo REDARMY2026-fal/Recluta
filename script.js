@@ -1,6 +1,6 @@
-const defaultState={xp:0,level:1,completed:0,skills:{Disciplina:1,Resistencia:1,Inteligencia:1,Coordinación:1,Liderazgo:1},history:[],team:[],teamConfirmed:false};
+const defaultState={xp:0,level:1,completed:0,skills:{Disciplina:1,Resistencia:1,Inteligencia:1,Coordinación:1,Liderazgo:1},history:[],team:[],teamConfirmed:false,campaignMonth:0,campaignLog:[]};
 let state;
-try{state={...defaultState,...JSON.parse(localStorage.getItem("recluta-save")||"{}")};state.skills={...defaultState.skills,...(state.skills||{})};state.history=state.history||[];state.team=Array.isArray(state.team)?state.team:[];}catch{state={...defaultState}}
+try{state={...defaultState,...JSON.parse(localStorage.getItem("recluta-save")||"{}")};state.skills={...defaultState.skills,...(state.skills||{})};state.history=state.history||[];state.team=Array.isArray(state.team)?state.team:[];state.campaignMonth=Number.isInteger(state.campaignMonth)&&state.campaignMonth>=0?state.campaignMonth:0;state.campaignLog=Array.isArray(state.campaignLog)?state.campaignLog:[];}catch{state={...defaultState}}
 const ranks=["Recluta","Soldado","Cabo","Sargento","Teniente","Capitán","Mayor","Coronel","General"];
 const candidates=[
 {id:"martin",name:"Martín Sosa",age:21,role:"Logística",trait:"Organizado · responsable · detallista",strength:"Planificación y control de suministros",weakness:"A veces piensa demasiado antes de actuar.",skill:"PLAN B",bio:"Ayudaba en el negocio familiar y aprendió a resolver problemas con recursos limitados.",quote:"«Si tenemos un plan, también tenemos que tener una alternativa.»",bonus:"Mejor criterio en desafíos de organización."},
@@ -11,6 +11,8 @@ const candidates=[
 ];
 const $=id=>document.getElementById(id);
 function save(){try{localStorage.setItem("recluta-save",JSON.stringify(state))}catch(error){console.warn("No se pudo guardar el progreso en este navegador.",error)}render()}
+function campaignDate(){const date=new Date(2026,state.campaignMonth,1);return date.toLocaleDateString("es-AR",{month:"long",year:"numeric"}).replace(/^\\p{L}/u,m=>m.toUpperCase())}
+function advanceMonth(){state.campaignMonth++;const date=campaignDate();state.campaignLog.push(date);save();$("campaign-date").textContent=date.toUpperCase();const notice=$("campaign-notice");if(notice)notice.textContent="El calendario avanzó. Nuevo período: "+date+". Tu progreso y tu equipo se mantienen."}
 function xpNeeded(){return state.level*100}
 function rank(){return ranks[Math.min(Math.floor((state.level-1)/2),ranks.length-1)]}
 function render(){
@@ -38,7 +40,7 @@ document.querySelectorAll(".nav").forEach(b=>b.addEventListener("click",()=>show
 document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.go)));
 $("start-training").addEventListener("click",()=>showPage(state.teamConfirmed?"entrenamiento":"equipo"));
 $("join-date").textContent=new Date().toLocaleDateString("es-AR");
-document.querySelectorAll("[data-test]").forEach(b=>b.addEventListener("click",()=>startTest(b.dataset.test)));
+$("advance-month").addEventListener("click",advanceMonth);\ndocument.querySelectorAll("[data-test]").forEach(b=>b.addEventListener("click",()=>startTest(b.dataset.test)));
 function startTest(type){
  if(!state.teamConfirmed){showPage("equipo");return}
  const box=$("exercise");box.scrollIntoView({behavior:"smooth",block:"start"});
