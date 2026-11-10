@@ -11,7 +11,7 @@ const candidates=[
 ];
 const $=id=>document.getElementById(id);
 function save(){try{localStorage.setItem("recluta-save",JSON.stringify(state))}catch(error){console.warn("No se pudo guardar el progreso en este navegador.",error)}render()}
-function campaignDate(){const date=new Date(2026,state.campaignMonth,1);return date.toLocaleDateString("es-AR",{month:"long",year:"numeric"}).replace(/^\\p{L}/u,m=>m.toUpperCase())}
+function campaignDate(){const date=new Date(2026,state.campaignMonth,1);const label=date.toLocaleDateString("es-AR",{month:"long",year:"numeric"});return label.charAt(0).toUpperCase()+label.slice(1)}
 function advanceMonth(){state.campaignMonth++;const date=campaignDate();state.campaignLog.push(date);save();$("campaign-date").textContent=date.toUpperCase();const notice=$("campaign-notice");if(notice)notice.textContent="El calendario avanzó. Nuevo período: "+date+". Tu progreso y tu equipo se mantienen."}
 function xpNeeded(){return state.level*100}
 function rank(){return ranks[Math.min(Math.floor((state.level-1)/2),ranks.length-1)]}
