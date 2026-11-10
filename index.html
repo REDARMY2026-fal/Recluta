@@ -2,10 +2,18 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#151b16">
-  <title>RECLUTA | Centro de entrenamiento</title><link rel="stylesheet" href="style.css?v=4">
+  <title>RECLUTA | Centro de entrenamiento</title><link rel="stylesheet" href="style.css?v=5">
 </head>
 <body>
-<div class="app-shell">
+<section id="lobby" class="lobby">
+  <div class="lobby-hero"><div class="lobby-hero-inner"><div class="lobby-copy"><span class="eyebrow">SIMULADOR DE CARRERA · ARGENTINA</span><h1>RECLUTA</h1><h2>Tu carrera empieza acá.</h2><p>Ingresá a la academia, formá tu equipo y construí tu trayectoria desde cadete hasta los rangos más altos.</p><div class="lobby-actions"><button class="lobby-primary" id="new-game">Nueva partida</button><button class="lobby-secondary" id="continue-game">Continuar</button></div></div><div class="lobby-art"><div class="lobby-insignia">R<span>★</span></div><div class="lobby-art-caption">ACADEMIA · ARGENTINA</div></div></div></div>
+  <div class="lobby-content"><div class="lobby-menu">
+    <button class="lobby-tile" data-lobby-info="partidas">▤ <span>Mis partidas</span></button><button class="lobby-tile" data-lobby-info="logros">★ <span>Logros</span></button><button class="lobby-tile" data-lobby-info="historial">◴ <span>Historial</span></button>
+    <button class="lobby-tile" data-lobby-info="ayuda">? <span>Cómo se juega</span></button><button class="lobby-tile" data-lobby-info="planes">✦ <span>Planes futuros</span></button><button class="lobby-tile" data-lobby-info="ajustes">⚙ <span>Ajustes</span></button>
+    <button class="lobby-tile" data-lobby-info="contacto">✉ <span>Contacto</span></button><div class="lobby-tile lobby-status">● <span>Modo individual · Guardado local</span></div>
+  </div><div class="lobby-trajectory"><h3>Tu trayectoria</h3><div class="trajectory-stats"><div><strong id="lobby-level">01</strong><span>NIVEL ACTUAL</span></div><div><strong id="lobby-xp">0</strong><span>EXPERIENCIA XP</span></div><div><strong id="lobby-completed">0</strong><span>PRUEBAS COMPLETADAS</span></div></div><p id="lobby-message">Tu historia todavía no comenzó. Iniciá una partida para empezar tu carrera.</p></div></div>
+</section>
+<div class="app-shell" id="game-app" hidden>
   <aside class="sidebar">
     <div class="brand"><div class="brand-mark">R</div><div><strong>RECLUTA</strong><small>ACADEMIA VIRTUAL</small></div></div>
     <div class="side-label">CENTRO DE MANDO</div>
@@ -53,5 +61,5 @@
     <footer>RECLUTA ACADEMY <span>SIMULADOR DE ENTRENAMIENTO · 2026</span></footer>
   </main>
 </div>
-<script src="script.js?v=5"></script>
+<script src="script.js?v=6"></script>
 </body></html>
