@@ -1,4 +1,4 @@
-const defaultState={xp:0,level:1,completed:0,skills:{Disciplina:1,Resistencia:1,Inteligencia:1,Coordinación:1,Liderazgo:1},history:[],team:[],teamConfirmed:false,campaignMonth:0,campaignLog:[],operations:[],operationProgress:null,operations:[],operationProgress:null};
+const defaultState={xp:0,level:1,completed:0,skills:{Disciplina:1,Resistencia:1,Inteligencia:1,Coordinación:1,Liderazgo:1},history:[],team:[],teamConfirmed:false,campaignMonth:0,campaignLog:[],operations:[],operationProgress:null};
 let state;
 try{state={...defaultState,...JSON.parse(localStorage.getItem("recluta-save")||"{}")};state.skills={...defaultState.skills,...(state.skills||{})};state.history=state.history||[];state.team=Array.isArray(state.team)?state.team:[];state.campaignMonth=Number.isInteger(state.campaignMonth)&&state.campaignMonth>=0?state.campaignMonth:0;state.campaignLog=Array.isArray(state.campaignLog)?state.campaignLog:[];state.operations=Array.isArray(state.operations)?state.operations:[];state.operationProgress=state.operationProgress||null;}catch{state={...defaultState}}
 const ranks=["Recluta","Soldado","Cabo","Sargento","Teniente","Capitán","Mayor","Coronel","General"];
@@ -37,7 +37,7 @@ function toggleCandidate(id){if(selectedTeam.includes(id)){selectedTeam=selected
 $("confirm-team").addEventListener("click",()=>{if(selectedTeam.length!==3)return;state.team=[...selectedTeam];state.teamConfirmed=true;save();$("team-message").textContent="Equipo confirmado. ¡Listos para el primer destino!";});
 function award(name,xp,skill){state.xp+=xp;state.completed++;state.skills[skill]=Math.min(10,(state.skills[skill]||1)+1);while(state.xp>=xpNeeded()){state.xp-=xpNeeded();state.level++}state.history.push({name,xp,date:new Date().toLocaleDateString("es-AR")});save()}
 const titles={inicio:"CENTRO DE ENTRENAMIENTO",equipo:"ASIGNACIÓN DE PERSONAL",operaciones:"CENTRO DE OPERACIONES",entrenamiento:"ÁREA DE INSTRUCCIÓN",perfil:"EXPEDIENTE DEL CADETE"};
-function showPage(id){if((id==="entrenamiento"||id==="operaciones")&&!state.teamConfirmed){id="equipo";$("team-message").textContent="Antes de entrenar, confirmá a los tres integrantes de tu equipo."}document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active-page",p.id===id));document.querySelectorAll(".nav").forEach(b=>b.classList.toggle("active",b.dataset.section===id));$("page-title").textContent=titles[id]||titles.inicio}
+function showPage(id){if((id==="entrenamiento"||id==="operaciones")&&!state.teamConfirmed){id="equipo";$("team-message").textContent="Antes de entrenar, confirmá a los tres integrantes de tu equipo."}document.querySelectorAll(".page").forEach(p=>p.classList.toggle("active-page",p.id===id));if(id==="operaciones")renderOperations();document.querySelectorAll(".nav").forEach(b=>b.classList.toggle("active",b.dataset.section===id));$("page-title").textContent=titles[id]||titles.inicio}
 document.querySelectorAll(".nav").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.section)));
 document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.go)));
 $("start-training").addEventListener("click",()=>showPage(state.teamConfirmed?"entrenamiento":"equipo"));
@@ -130,4 +130,5 @@ $("lobby-detail-close").addEventListener("click",()=>{$("lobby-detail").hidden=t
 if(localStorage.getItem("recluta-reduce-motion")==="1")document.body.classList.add("reduce-motion");
 
 render();
+renderOperations();
 if(!state.teamConfirmed)showPage("equipo");
