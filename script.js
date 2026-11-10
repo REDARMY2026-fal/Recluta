@@ -16,6 +16,8 @@ function advanceMonth(){state.campaignMonth++;const date=campaignDate();state.ca
 function xpNeeded(){return state.level*100}
 function rank(){return ranks[Math.min(Math.floor((state.level-1)/2),ranks.length-1)]}
 function render(){
+ $("campaign-date").textContent=campaignDate().toUpperCase();
+ $("lobby-level").textContent=String(state.level).padStart(2,"0");$("lobby-xp").textContent=state.xp;$("lobby-completed").textContent=state.completed;
  $("rank").textContent=rank().toUpperCase();$("profile-rank").textContent=rank();$("level").textContent=String(state.level).padStart(2,"0");$("xp").textContent=state.xp;$("completed").textContent=state.completed;$("xp-next").textContent=`${state.xp} / ${xpNeeded()} XP para el próximo nivel`;$("xp-progress-label").textContent=`${state.xp} / ${xpNeeded()} XP`;$("xp-progress-bar").style.width=`${Math.min(100,state.xp/xpNeeded()*100)}%`;
  $("skills").innerHTML=Object.entries(state.skills).map(([name,value])=>`<div><div class="skill-head"><span>${name.toUpperCase()}</span><b>NIV. ${value}</b></div><div class="bar"><span style="width:${Math.min(value*10,100)}%"></span></div></div>`).join("");
  $("history-list").innerHTML=state.history.length?state.history.slice().reverse().map(x=>`<p>▸ ${x.name} — +${x.xp} XP <span class="muted">· ${x.date}</span></p>`).join(""):"Todavía no completaste ninguna prueba.";
@@ -53,5 +55,11 @@ function startTest(type){
 }
 function addChoice(box,value,fn){let b=document.createElement("button");b.className="choice";b.textContent=value;b.onclick=fn;box.appendChild(b)}
 function finish(box,correct,name,skill){box.querySelectorAll("button").forEach(b=>b.disabled=true);if(correct){award(name,50,skill);box.insertAdjacentHTML("beforeend",'<p class="feedback">✓ PRUEBA SUPERADA · +50 XP</p>')}else{box.insertAdjacentHTML("beforeend",'<p class="feedback">Prueba no superada. Podés intentarlo nuevamente.</p>')}let again=document.createElement("button");again.className="secondary";again.textContent="VOLVER A ENTRENAMIENTO";again.onclick=()=>{box.innerHTML='<span class="eyebrow">SALA DE PRUEBAS</span><h3>Seleccioná una actividad</h3><p class="muted">Tus resultados se registrarán en tu expediente.</p>'};box.appendChild(again)}
+
+function enterGame(){ $("lobby").hidden=true;$("game-app").hidden=false;showPage(state.teamConfirmed?"inicio":"equipo");window.scrollTo({top:0,behavior:"smooth"}); }
+$("new-game").addEventListener("click",()=>{if(localStorage.getItem("recluta-save")&&!confirm("¿Empezar una partida nueva? El progreso local actual se reemplazará."))return;state={xp:0,level:1,completed:0,skills:{Disciplina:1,Resistencia:1,Inteligencia:1,Coordinación:1,Liderazgo:1},history:[],team:[],teamConfirmed:false,campaignMonth:0,campaignLog:[]};selectedTeam=[];save();enterGame()});
+$("continue-game").addEventListener("click",enterGame);
+document.querySelectorAll("[data-lobby-info]").forEach(b=>b.addEventListener("click",()=>{const messages={partidas:"Por ahora tenés una partida guardada en este navegador. Más adelante podremos sumar varias partidas.",logros:"Los logros estarán disponibles cuando incorporemos medallas y objetivos de campaña.",historial:"Tu historial completo se encuentra dentro de Mi expediente.",ayuda:"Elegí tu equipo, completá pruebas, ganá experiencia y avanzá el calendario a tu ritmo.",planes:"RECLUTA será gratuito durante su etapa inicial. Los planes de continuidad son una idea futura; todavía no hay cobros.",ajustes:"Los ajustes de sonido, accesibilidad y preferencias llegarán en una próxima actualización.",contacto:"El canal de contacto oficial todavía está en preparación."};$("lobby-message").textContent=messages[b.dataset.lobbyInfo]||"Próximamente."}));
+
 render();
 if(!state.teamConfirmed)showPage("equipo");
