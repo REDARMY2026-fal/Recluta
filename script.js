@@ -40,7 +40,8 @@ document.querySelectorAll(".nav").forEach(b=>b.addEventListener("click",()=>show
 document.querySelectorAll("[data-go]").forEach(b=>b.addEventListener("click",()=>showPage(b.dataset.go)));
 $("start-training").addEventListener("click",()=>showPage(state.teamConfirmed?"entrenamiento":"equipo"));
 $("join-date").textContent=new Date().toLocaleDateString("es-AR");
-$("advance-month").addEventListener("click",advanceMonth);\ndocument.querySelectorAll("[data-test]").forEach(b=>b.addEventListener("click",()=>startTest(b.dataset.test)));
+$("advance-month").addEventListener("click",advanceMonth);
+document.querySelectorAll("[data-test]").forEach(b=>b.addEventListener("click",()=>startTest(b.dataset.test)));
 function startTest(type){
  if(!state.teamConfirmed){showPage("equipo");return}
  const box=$("exercise");box.scrollIntoView({behavior:"smooth",block:"start"});
