@@ -138,7 +138,8 @@ function renderOperations(){
  const done=state.operations.some(o=>o.id==="first-destination");
  $("begin-operation").textContent=done?"OPERACIÓN COMPLETADA":state.operationProgress?"CONTINUAR OPERACIÓN →":"INICIAR OPERACIÓN →";
  $("begin-operation").disabled=done||!state.teamConfirmed;
- $("begin-operation").onclick=beginOperation;\n renderRouteOperation();
+ $("begin-operation").onclick=beginOperation;
+ renderRouteOperation();
  $("operation-status").textContent=done?"Operación completada":state.operationProgress?"Operación en curso":"Esperando asignación";
  $("operation-summary").textContent=done?"La primera misión ya figura en tu expediente.":state.operationProgress?"Tu distribución quedó guardada. Podés continuar desde donde la dejaste.":"Prepará al equipo y organizá los suministros para tres puntos de asistencia.";
  if(state.operationProgress&&!done)showOperationStep();
@@ -281,7 +282,7 @@ function beginRouteOperation(){
  if(!state.teamConfirmed){showPage("equipo");return}
  if(!state.operations.some(o=>o.id==="first-destination")||state.operations.some(o=>o.id==="storm-route"))return;
  if(!state.routeProgress)state.routeProgress={x:0,y:0,moves:0,collected:[],delivered:[],log:["El equipo salió del centro de distribución."],finished:false};
- renderRoute();
+ save();renderRoute();
 }
 function routeCellKey(x,y){return x+","+y}
 function moveRoute(dx,dy){
@@ -335,7 +336,8 @@ function completeRouteOperation(){
  $("operation-content").innerHTML=`<div class="operation-result"><span>INFORME DE RUTA</span><strong>${grade}</strong><b>+${xp} XP</b><p>${p.moves} movimientos · 2 entregas confirmadas · puntuación ${score}/100.</p><p>${state.team.map(id=>candidates.find(c=>c.id===id)?.name).filter(Boolean).join(" · ")} completaron el recorrido.</p></div><button class="secondary" id="return-route">VOLVER AL CENTRO DE MANDO</button>`;
  $("return-route").onclick=()=>showPage("inicio");renderOperations();
 }
-\nfunction enterGame(){ $("lobby").hidden=true;$("game-app").hidden=false;showPage(state.teamConfirmed?"inicio":"equipo");window.scrollTo({top:0,behavior:"smooth"}); }
+
+function enterGame(){ $("lobby").hidden=true;$("game-app").hidden=false;showPage(state.teamConfirmed?"inicio":"equipo");window.scrollTo({top:0,behavior:"smooth"}); }
 $("new-game").addEventListener("click",()=>{if(localStorage.getItem("recluta-save")&&!confirm("¿Empezar una partida nueva? El progreso local actual se reemplazará."))return;state={xp:0,level:1,completed:0,skills:{Disciplina:1,Resistencia:1,Inteligencia:1,Coordinación:1,Liderazgo:1},history:[],team:[],teamConfirmed:false,campaignMonth:0,campaignLog:[],operations:[],operationProgress:null,routeProgress:null};selectedTeam=[];save();enterGame()});
 $("continue-game").addEventListener("click",enterGame);
 const lobbyDetailData={
