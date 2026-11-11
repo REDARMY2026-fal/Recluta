@@ -178,7 +178,7 @@ function completeOperation(){
  $("operation-status").textContent="MISIÓN COMPLETADA · "+grade;
  $("operation-summary").textContent="La asistencia quedó organizada y el informe fue entregado. El desempeño de tu equipo quedó registrado.";
  $("operation-content").innerHTML=`<div class="operation-result"><span>RESULTADO FINAL</span><strong>${grade}</strong><b>+${xp} XP</b><p>${score}/6 puntos de coordinación.</p><p>${state.team.map(id=>candidates.find(c=>c.id===id)?.name).join(" · ")} completaron su primera misión con vos.</p></div><button class="secondary" id="return-operations">VOLVER AL CENTRO DE OPERACIONES</button>`;
- $("return-operations").onclick=renderOperations;renderOperations();
+ $("return-operations").textContent="VOLVER AL CENTRO DE MANDO";$("return-operations").onclick=()=>showPage("inicio");renderOperations();
 }
 
 
