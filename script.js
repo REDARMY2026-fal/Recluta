@@ -24,9 +24,15 @@ function render(){
  $("squad-summary").textContent=state.teamConfirmed?state.team.map(id=>candidates.find(c=>c.id===id)?.name).filter(Boolean).join(" · "):"Todavía no seleccionaste a tus compañeros.";
  renderTeam();
 }
+function candidatePortrait(c){
+ const palette={martin:["#607b68","#d2a47c","#27362b"],tomas:["#657d9d","#d5a783","#29364b"],valentina:["#9b746e","#e0b18e","#493039"],lucas:["#817a9b","#c99776","#343044"],camila:["#9a825e","#d9a17e","#3e3328"]}[c.id]||["#71836c","#d2a47c","#29362b"];
+ const [bg,skin,hair]=palette;
+ const svg=`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 160 160"><rect width="160" height="160" fill="${bg}"/><path d="M18 160c5-34 26-50 62-50s57 16 62 50" fill="#17221a"/><path d="M48 76c0-31 14-48 33-48s34 17 34 48v17c0 20-15 36-34 36S48 113 48 93z" fill="${skin}"/><path d="M46 75c-3-34 13-55 37-55 26 0 42 19 37 57l-9-18c-14 2-31-4-42-15-4 14-12 22-23 31z" fill="${hair}"/><path d="M62 82h9m19 0h9" stroke="#382c27" stroke-width="4" stroke-linecap="round"/><path d="M73 103q9 7 18 0" fill="none" stroke="#8b5548" stroke-width="3" stroke-linecap="round"/><path d="M54 143l26-18 26 18" fill="none" stroke="#a6b47a" stroke-width="5"/><path d="M0 145h160" stroke="#ffffff" stroke-opacity=".18"/></svg>`;
+ return `<img class="candidate-portrait" src="data:image/svg+xml,${encodeURIComponent(svg)}" alt="Retrato ilustrado de ${c.name}" loading="lazy" decoding="async">`;
+}
 function renderTeam(){
  $("team-count").textContent=`${selectedTeam.length} / 3`;
- $("candidate-grid").innerHTML=candidates.map(c=>{const selected=selectedTeam.includes(c.id);return `<article class="candidate panel ${selected?"selected":""}"><div class="candidate-top"><div class="candidate-avatar">${c.name.split(" ").map(x=>x[0]).join("")}</div><span class="candidate-role">${c.role}</span></div><h3>${c.name}</h3><p class="candidate-meta">${c.age} AÑOS · ${c.trait}</p><p>${c.bio}</p><div class="candidate-detail"><b>FORTALEZA</b><span>${c.strength}</span></div><div class="candidate-detail"><b>PUNTO DÉBIL</b><span>${c.weakness}</span></div><div class="candidate-skill"><b>${c.skill}</b><span>${c.bonus}</span></div><blockquote>${c.quote}</blockquote><button class="${selected?"primary":"secondary"} pick-candidate" data-pick="${c.id}">${selected?"✓ SELECCIONADO":"SELECCIONAR"}</button></article>`}).join("");
+ $("candidate-grid").innerHTML=candidates.map(c=>{const selected=selectedTeam.includes(c.id);return `<article class="candidate panel ${selected?"selected":""}"><div class="candidate-top"><div class="candidate-avatar">${candidatePortrait(c)}</div><span class="candidate-role">${c.role}</span></div><h3>${c.name}</h3><p class="candidate-meta">${c.age} AÑOS · ${c.trait}</p><p>${c.bio}</p><div class="candidate-detail"><b>FORTALEZA</b><span>${c.strength}</span></div><div class="candidate-detail"><b>PUNTO DÉBIL</b><span>${c.weakness}</span></div><div class="candidate-skill"><b>${c.skill}</b><span>${c.bonus}</span></div><blockquote>${c.quote}</blockquote><button class="${selected?"primary":"secondary"} pick-candidate" data-pick="${c.id}">${selected?"✓ SELECCIONADO":"SELECCIONAR"}</button></article>`}).join("");
  document.querySelectorAll("[data-pick]").forEach(b=>b.addEventListener("click",()=>toggleCandidate(b.dataset.pick)));
  $("confirm-team").disabled=selectedTeam.length!==3;
  $("team-message").textContent=selectedTeam.length===3?"Equipo completo. Confirmá para guardar tu selección.":`Te falta${3-selectedTeam.length===1?"":"n"} ${3-selectedTeam.length} selección${3-selectedTeam.length===1?"":"es"}.`;
@@ -116,40 +122,59 @@ let operationChoice=0,operationScore=0;
 function renderOperations(){
  $("operation-history").innerHTML=state.operations.length?state.operations.slice().reverse().map(o=>`<p>✓ ${o.name} · ${o.grade} · +${o.xp} XP <span class="muted">· ${o.date}</span></p>`).join(""):"Todavía no completaste ninguna operación.";
  const done=state.operations.some(o=>o.id==="first-destination");
- $("operation-status").textContent=done?"Operación completada":"Esperando asignación";
- $("operation-summary").textContent=done?"La primera misión ya figura en tu expediente. Próximamente habrá nuevas operaciones.":"Revisá el informe y prepará a tu equipo.";
- $("begin-operation").textContent=done?"OPERACIÓN COMPLETADA":"INICIAR OPERACIÓN →";
+ $("begin-operation").textContent=done?"OPERACIÓN COMPLETADA":state.operationProgress?"CONTINUAR OPERACIÓN →":"INICIAR OPERACIÓN →";
  $("begin-operation").disabled=done||!state.teamConfirmed;
  $("begin-operation").onclick=beginOperation;
+ $("operation-status").textContent=done?"Operación completada":state.operationProgress?"Operación en curso":"Esperando asignación";
+ $("operation-summary").textContent=done?"La primera misión ya figura en tu expediente.":state.operationProgress?"Tu avance está guardado. Podés continuar desde la última etapa.":"Revisá el informe y prepará a tu equipo.";
+ if(state.operationProgress&&!done)showOperationStep();
 }
 function beginOperation(){
  if(!state.teamConfirmed){showPage("equipo");return}
  if(state.operations.some(o=>o.id==="first-destination"))return;
- operationChoice=0;operationScore=0;
+ if(!state.operationProgress)state.operationProgress={step:0,score:0,answer:null};
  showOperationStep();
 }
 function showOperationStep(){
- const step=operationSteps[operationChoice];
- $("operation-status").textContent="Operación en curso · Etapa "+(operationChoice+1)+"/3";
+ const progress=state.operationProgress;
+ if(!progress)return;
+ const step=operationSteps[progress.step];
+ if(!step){completeOperation();return}
+ $("operation-status").textContent="Operación en curso · Etapa "+(progress.step+1)+"/3";
  $("operation-summary").textContent="Equipo asignado: "+state.team.map(id=>candidates.find(c=>c.id===id)?.name).join(", ");
- $("operation-content").innerHTML=`<div class="operation-progress"><span style="width:${(operationChoice/3)*100}%"></span></div><h3>${step.title}</h3><p>${step.text}</p><div class="operation-choices">${step.choices.map((c,i)=>`<button class="operation-choice" data-operation-choice="${i}">${c.label}</button>`).join("")}</div><p class="operation-feedback" id="operation-feedback"></p>`;
+ $("operation-content").innerHTML=`<div class="operation-progress"><span style="width:${(progress.step/3)*100}%"></span></div><h3>${step.title}</h3><p>${step.text}</p><div class="operation-choices">${step.choices.map((c,i)=>`<button class="operation-choice" data-operation-choice="${i}" ${progress.answer===i?"disabled":""}>${c.label}</button>`).join("")}</div><p class="operation-feedback" id="operation-feedback">${progress.answer===null?"":step.choices[progress.answer].feedback}</p>`;
  document.querySelectorAll("[data-operation-choice]").forEach(b=>b.onclick=()=>chooseOperation(Number(b.dataset.operationChoice)));
+ if(progress.answer!==null){
+  const next=document.createElement("button");next.className="primary";next.textContent=progress.step===2?"FINALIZAR OPERACIÓN →":"CONTINUAR →";next.onclick=continueOperation;$("operation-content").appendChild(next);
+ }
 }
 function chooseOperation(index){
- const step=operationSteps[operationChoice],choice=step.choices[index];
- operationScore+=choice.score;
- document.querySelectorAll("[data-operation-choice]").forEach(b=>b.disabled=true);
- $("operation-feedback").textContent=choice.feedback;
- const next=document.createElement("button");next.className="primary";next.textContent=operationChoice===2?"FINALIZAR OPERACIÓN →":"CONTINUAR →";next.onclick=()=>{operationChoice++;if(operationChoice<3)showOperationStep();else completeOperation()};$("operation-content").appendChild(next);
+ const progress=state.operationProgress;
+ if(!progress||progress.answer!==null||!Number.isInteger(index)||!operationSteps[progress.step]?.choices[index])return;
+ progress.answer=index;
+ progress.score+=operationSteps[progress.step].choices[index].score;
+ save();
+ showOperationStep();
+}
+function continueOperation(){
+ if(!state.operationProgress||state.operationProgress.answer===null)return;
+ if(state.operationProgress.step===2){completeOperation();return}
+ state.operationProgress.step++;
+ state.operationProgress.answer=null;
+ save();
+ showOperationStep();
 }
 function completeOperation(){
- const xp=operationScore>=5?30:operationScore>=3?20:15;
- const grade=operationScore>=5?"DESTACADA":operationScore>=3?"SATISFACTORIA":"CON OBSERVACIONES";
- state.operations.push({id:"first-destination",name:"PRIMER DESTINO",grade,xp,date:campaignDate()});
+ if(!state.operationProgress||state.operations.some(o=>o.id==="first-destination"))return;
+ const score=state.operationProgress.score;
+ const xp=score>=5?30:score>=3?20:15;
+ const grade=score>=5?"DESTACADA":score>=3?"SATISFACTORIA":"CON OBSERVACIONES";
+ state.operations.push({id:"first-destination",name:"PRIMER DESTINO",grade,xp,date:campaignDate(),score});
+ state.operationProgress=null;
  award("Operación: Primer destino",xp,"Liderazgo");
  $("operation-status").textContent="MISIÓN COMPLETADA · "+grade;
  $("operation-summary").textContent="La asistencia quedó organizada y el informe fue entregado. El desempeño de tu equipo quedó registrado.";
- $("operation-content").innerHTML=`<div class="operation-result"><span>RESULTADO FINAL</span><strong>${grade}</strong><b>+${xp} XP</b><p>${operationScore}/6 puntos de coordinación.</p><p>${state.team.map(id=>candidates.find(c=>c.id===id)?.name).join(" · ")} completaron su primera misión con vos.</p></div><button class="secondary" id="return-operations">VOLVER AL CENTRO DE OPERACIONES</button>`;
+ $("operation-content").innerHTML=`<div class="operation-result"><span>RESULTADO FINAL</span><strong>${grade}</strong><b>+${xp} XP</b><p>${score}/6 puntos de coordinación.</p><p>${state.team.map(id=>candidates.find(c=>c.id===id)?.name).join(" · ")} completaron su primera misión con vos.</p></div><button class="secondary" id="return-operations">VOLVER AL CENTRO DE OPERACIONES</button>`;
  $("return-operations").onclick=renderOperations;renderOperations();
 }
 
