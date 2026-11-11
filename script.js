@@ -202,15 +202,22 @@ function showDecisionStep(){
  const index=Math.min(p.decisionIndex||0,operationDecisions.length-1),event=operationDecisions[index];
  $("operation-status").textContent="OPERACIÓN EN CURSO · COORDINACIÓN";
  $("operation-summary").textContent="La distribución fue completada. Ahora resolvé los imprevistos junto al equipo.";
- $("operation-content").innerHTML=`<div class="dispatch-hud"><div><span>ETAPA</span><b>02 / 02</b></div><div><span>DECISIÓN</span><b>${index+1} / ${operationDecisions.length}</b></div><div><span>CRITERIO</span><b>${p.decisionScore||0} / 100</b></div></div><div class="operation-progress"><span style="width:${Math.round((index/operationDecisions.length)*100)}%"></span></div><section class="dispatch-event"><span class="eyebrow">INFORME DE SITUACIÓN · ${String(index+1).padStart(2,"0")}</span><h3>${event.title}</h3><p>${event.brief}</p><div class="dispatch-event-question"><b>${event.question}</b></div><div class="operation-choices" id="decision-options">${event.options.map((option,i)=>`<button class="operation-choice" type="button" data-decision="${i}"><span class="decision-letter">${String.fromCharCode(65+i)}</span>${option}</button>`).join("")}</div><p class="operation-feedback" id="decision-feedback" aria-live="polite">Elegí una respuesta. Cada decisión influye en el resultado final.</p></section>`;
- document.querySelectorAll("[data-decision]").forEach(button=>button.onclick=()=>resolveDecision(Number(button.dataset.decision)));
+ $("operation-content").innerHTML=`<div class="dispatch-hud"><div><span>ETAPA</span><b>02 / 02</b></div><div><span>DECISIÓN</span><b>${index+1} / ${operationDecisions.length}</b></div><div><span>CRITERIO</span><b>${p.decisionScore||0} / 100</b></div></div><div class="operation-progress"><span style="width:${Math.round((index/operationDecisions.length)*100)}%"></span></div><section class="dispatch-event"><span class="eyebrow">INFORME DE SITUACIÓN · ${String(index+1).padStart(2,"0")}</span><h3>${event.title}</h3><p>${event.brief}</p><div class="dispatch-event-question"><b>${event.question}</b></div><div class="operation-choices" id="decision-options">${event.options.map((option,i)=>`<button class="operation-choice" type="button" data-decision="${i}"><span class="decision-letter">${String.fromCharCode(65+i)}</span>${option}</button>`).join("")}</div><p class="operation-feedback" id="decision-feedback" aria-live="polite">${p.decisions?.includes(index)?"Decisión registrada. Podés continuar.":"Elegí una respuesta. Cada decisión influye en el resultado final."}</p></section>`;
+ const alreadyAnswered=Array.isArray(p.decisions)&&p.decisions.includes(index);
+ if(alreadyAnswered){
+  const chosen=p.answers?.[index];
+  const options=$("decision-options");if(options)options.querySelectorAll("button").forEach((button,i)=>{button.disabled=true;if(i===event.correct)button.classList.add("decision-correct");else if(i===chosen)button.classList.add("decision-wrong")});
+  const next=document.createElement("button");next.className="primary";next.textContent=index===operationDecisions.length-1?"CERRAR INFORME →":"SIGUIENTE SITUACIÓN →";
+  next.onclick=()=>{p.decisionIndex=index+1;if(p.decisionIndex>=operationDecisions.length)completeOperation();else{save();showDecisionStep()}};
+  $("operation-content").appendChild(next);
+ }else document.querySelectorAll("[data-decision]").forEach(button=>button.onclick=()=>resolveDecision(Number(button.dataset.decision)));
 }
 function resolveDecision(choice){
  const p=state.operationProgress;if(!p||p.stage!=="decisions")return;
  const index=p.decisionIndex||0,event=operationDecisions[index];if(!event||p.decisions?.includes(index))return;
  const correct=choice===event.correct;
  p.decisions=Array.isArray(p.decisions)?p.decisions:[];
- p.decisions.push(index);
+ p.decisions.push(index);p.answers=Array.isArray(p.answers)?p.answers:[];p.answers[index]=choice;
  if(correct)p.decisionScore=(p.decisionScore||0)+Math.round(100/operationDecisions.length);
  else p.decisionErrors=(p.decisionErrors||0)+1;
  save();
