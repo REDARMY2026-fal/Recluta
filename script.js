@@ -44,6 +44,10 @@ $("start-training").addEventListener("click",()=>showPage(state.teamConfirmed?"e
 $("join-date").textContent=new Date().toLocaleDateString("es-AR");
 $("advance-month").addEventListener("click",advanceMonth);
 document.querySelectorAll("[data-test]").forEach(b=>b.addEventListener("click",()=>startTest(b.dataset.test)));
+let selectedDifficulty="easy";
+const difficultyDescriptions={easy:"Pruebas introductorias para desarrollar tus aptitudes.",normal:"Desafíos que requieren atención y planificación.",hard:"Pruebas exigentes que combinan varias aptitudes.",special:"Desafíos especiales de liderazgo y toma de decisiones."};
+document.querySelectorAll("[data-difficulty]").forEach(tab=>tab.addEventListener("click",()=>{selectedDifficulty=tab.dataset.difficulty;document.querySelectorAll("[data-difficulty]").forEach(t=>{const active=t===tab;t.classList.toggle("active",active);t.setAttribute("aria-selected",String(active))});document.querySelectorAll("[data-difficulty-card]").forEach(card=>card.hidden=card.dataset.difficultyCard!==selectedDifficulty);$("difficulty-description").textContent=difficultyDescriptions[selectedDifficulty]}));
+document.querySelectorAll("[data-difficulty-card]").forEach(card=>card.hidden=card.dataset.difficultyCard!=="easy");
 function startTest(type){
  if(!state.teamConfirmed){showPage("equipo");return}
  const box=$("exercise");box.scrollIntoView({behavior:"smooth",block:"start"});
@@ -54,7 +58,8 @@ function startTest(type){
  if(type==="leadership"){box.innerHTML='<span class="eyebrow">PRUEBA 05 · LIDERAZGO</span><h3>Decisión de equipo</h3><p>Un equipo tiene tres tareas importantes y poco tiempo. ¿Qué decisión ayuda a organizarse mejor?</p>';[['Repartir las tareas según las capacidades y escuchar al equipo.',true],['Que una sola persona haga todo sin consultar.',false],['Dejar las tareas para el último momento.',false]].sort(()=>Math.random()-.5).forEach(([v,ok])=>addChoice(box,v,()=>finish(box,ok,"Decisión de equipo","Liderazgo")))}
 }
 function addChoice(box,value,fn){let b=document.createElement("button");b.className="choice";b.textContent=value;b.onclick=fn;box.appendChild(b)}
-function finish(box,correct,name,skill){box.querySelectorAll("button").forEach(b=>b.disabled=true);if(correct){award(name,50,skill);box.insertAdjacentHTML("beforeend",'<p class="feedback">✓ PRUEBA SUPERADA · +50 XP</p>')}else{box.insertAdjacentHTML("beforeend",'<p class="feedback">Prueba no superada. Podés intentarlo nuevamente.</p>')}let again=document.createElement("button");again.className="secondary";again.textContent="VOLVER A ENTRENAMIENTO";again.onclick=()=>{box.innerHTML='<span class="eyebrow">SALA DE PRUEBAS</span><h3>Seleccioná una actividad</h3><p class="muted">Tus resultados se registrarán en tu expediente.</p>'};box.appendChild(again)}
+function finish(box,correct,name,skill){box.querySelectorAll("button").forEach(b=>b.disabled=true);if(correct){const gained=({easy:15,normal:20,hard:25,special:30})[selectedDifficulty]||15;award(name,gained,skill);box.insertAdjacentHTML("beforeend",`<p class="feedback">✓ PRUEBA SUPERADA · +${gained} XP</p>`)}else{box.insertAdjacentHTML("beforeend",'<p class="feedback">Prueba no superada. Podés intentarlo nuevamente.</p>')}let again=document.createElement("button");again.className="secondary";again.textContent="VOLVER A ENTRENAMIENTO";again.onclick=()=>{box.innerHTML='<span class="eyebrow">SALA DE PRUEBAS</span><h3>Seleccioná una actividad</h3><p class="muted">Tus resultados se registrarán en tu expediente.</p>'};box.appendChild(again)}
+
 
 
 const operationSteps=[
@@ -128,6 +133,27 @@ contacto:["COMUNICACIÓN","Contacto",()=>`<p>RECLUTA es un proyecto independient
 document.querySelectorAll("[data-lobby-info]").forEach(b=>b.addEventListener("click",()=>{const data=lobbyDetailData[b.dataset.lobbyInfo];if(!data)return;$("lobby-detail-kicker").textContent=data[0];$("lobby-detail-title").textContent=data[1];$("lobby-detail-content").innerHTML=data[2]();$("lobby-detail").hidden=false;$("lobby-message").textContent=data[1]+" · Información abierta."; $("lobby-detail").scrollIntoView({behavior:"smooth",block:"nearest"});const cont=$("detail-continue");if(cont)cont.onclick=enterGame;const reduce=$("reduce-motion");if(reduce)reduce.onchange=()=>{localStorage.setItem("recluta-reduce-motion",reduce.checked?"1":"0");document.body.classList.toggle("reduce-motion",reduce.checked)};}));
 $("lobby-detail-close").addEventListener("click",()=>{$("lobby-detail").hidden=true});
 if(localStorage.getItem("recluta-reduce-motion")==="1")document.body.classList.add("reduce-motion");
+
+// Google Analytics: solo se carga si la persona acepta.
+const RECLUTA_GA_ID="G-KS7WJNEC0W";
+function enableAnalytics(){
+ if(window.reclutaAnalyticsLoaded)return;
+ window.reclutaAnalyticsLoaded=true;
+ window.dataLayer=window.dataLayer||[];
+ function gtag(){window.dataLayer.push(arguments)}
+ window.gtag=gtag;
+ gtag("js",new Date());
+ gtag("config",RECLUTA_GA_ID,{anonymize_ip:true});
+ const tag=document.createElement("script");
+ tag.async=true;
+ tag.src="https://www.googletagmanager.com/gtag/js?id="+RECLUTA_GA_ID;
+ document.head.appendChild(tag);
+}
+const analyticsConsent=localStorage.getItem("recluta-analytics-consent");
+if(analyticsConsent==="yes")enableAnalytics();
+if(!analyticsConsent&&$("analytics-consent"))$("analytics-consent").hidden=false;
+if($("analytics-accept"))$("analytics-accept").addEventListener("click",()=>{localStorage.setItem("recluta-analytics-consent","yes");$("analytics-consent").hidden=true;enableAnalytics()});
+if($("analytics-reject"))$("analytics-reject").addEventListener("click",()=>{localStorage.setItem("recluta-analytics-consent","no");$("analytics-consent").hidden=true});
 
 render();
 renderOperations();
