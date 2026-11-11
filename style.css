@@ -399,3 +399,13 @@ input,select,textarea{
 .route-log>b{font-size:9px;letter-spacing:1.1px;color:#d2dcb8}
 .route-log p{font-size:10px;color:#c1cbbb;margin:7px 0 0}
 @media(max-width:560px){.route-objectives{grid-template-columns:1fr}.route-board-wrap{padding:8px}.route-board{gap:4px}.route-cell small{font-size:6px}.route-controls{justify-content:center}.route-controls>span{width:100%;text-align:center}}
+
+/* Route interaction polish and clear dynamic events */
+.route-cell{position:relative;z-index:1;pointer-events:auto;touch-action:manipulation;cursor:pointer}
+.route-cell:disabled{cursor:default}
+.route-cell.route-beacon{background:#3d3c27;color:#f0d88c;border-color:#bba45d;box-shadow:inset 0 0 0 1px #cbb76a33}
+.route-alert{padding:10px 13px;margin:10px 0;background:#332d1c;border-left:3px solid #c6a45e;color:#e5d6a9;font-size:10px;line-height:1.6}
+.route-controls button{position:relative;z-index:2;pointer-events:auto;touch-action:manipulation;cursor:pointer}
+.route-controls button:disabled{cursor:not-allowed}
+#activate-route-radio{display:block;width:100%;max-width:340px;margin:12px auto;background:#c5a65e;border-color:#d9c17c;color:#211d12}
+#restart-route{display:block}
