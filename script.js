@@ -78,7 +78,7 @@ function startTest(type){
   const vals=shuffle([needed,needed+damaged,needed-reserve,needed+(level+1)*7]);choices(task,vals,needed,"Balance logístico","Disciplina");
  }
  if(type==="logic"){
-  const n=level===0?3:level===1?5:level===2?7:9,seq=level===0?[n,n+3,n+6,n+9]:level===1?[n,n*2,n*4,n*8]:level===2?[n,n+2,n+6,n+12]:[n,n*2+1,n*4+3,n*8+7],answer=level===0?seq[3]+3:level===1?seq[3]*2:level===2?seq[3]+8:seq[3]*2+15;
+  const n=level===0?3:level===1?5:level===2?7:9,seq=level===0?[n,n+3,n+6,n+9]:level===1?[n,n*2,n*4,n*8]:level===2?[n,n+2,n+6,n+12]:[n,n*2+1,n*4+3,n*8+7],answer=level===0?seq[3]+3:level===1?seq[3]*2:level===2?seq[3]+8:seq[3]*2+1;
   const task=heading("RAZONAMIENTO","Patrón de progresión","Identificá la regla que conecta todos los términos y elegí el siguiente valor.");
   task.innerHTML=`<div class="logic-sequence">${seq.join("<span> / </span>")}<b>?</b></div><p>¿Qué número continúa la secuencia?</p>`;
   choices(task,shuffle([answer,answer+2,answer-3,answer+Math.max(5,n)]),answer,"Razonamiento lógico","Inteligencia");
