@@ -409,3 +409,9 @@ input,select,textarea{
 .route-controls button:disabled{cursor:not-allowed}
 #activate-route-radio{display:block;width:100%;max-width:340px;margin:12px auto;background:#c5a65e;border-color:#d9c17c;color:#211d12}
 #restart-route{display:block}
+
+.route-controls .route-pad{display:grid;grid-template-columns:repeat(3,44px);grid-template-rows:repeat(2,42px);gap:5px}
+.route-controls .route-pad button:nth-child(1){grid-column:2;grid-row:1}
+.route-controls .route-pad button:nth-child(2){grid-column:1;grid-row:2}
+.route-controls .route-pad button:nth-child(3){grid-column:2;grid-row:2}
+.route-controls .route-pad button:nth-child(4){grid-column:3;grid-row:2}
