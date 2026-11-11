@@ -10,6 +10,7 @@ const candidates=[
 {id:"camila",name:"Camila Torres",age:20,role:"Asistencia y personal",trait:"Práctica · sociable · perseverante",strength:"Administrar tiempos y distribuir tareas",weakness:"Puede frustrarse cuando el grupo no se organiza.",skill:"ORDEN DE EQUIPO",bio:"Organizaba actividades de voluntariado y sabe adaptar los planes cuando cambian las necesidades.",quote:"«Cada persona puede aportar algo. Organicemos las tareas.»",bonus:"Útil en coordinación y decisiones de equipo."}
 ];
 const $=id=>document.getElementById(id);
+function shuffle(items){const result=[...items];for(let i=result.length-1;i>0;i--){const j=Math.floor(Math.random()*(i+1));[result[i],result[j]]=[result[j],result[i]]}return result}
 function save(){try{localStorage.setItem("recluta-save",JSON.stringify(state))}catch(error){console.warn("No se pudo guardar el progreso en este navegador.",error)}render()}
 function campaignDate(){const date=new Date(2026,state.campaignMonth,1);const label=date.toLocaleDateString("es-AR",{month:"long",year:"numeric"});return label.charAt(0).toUpperCase()+label.slice(1)}
 function advanceMonth(){state.campaignMonth++;const date=campaignDate();state.campaignLog.push(date);save();$("campaign-date").textContent=date.toUpperCase();const notice=$("campaign-notice");if(notice)notice.textContent="El calendario avanzó. Nuevo período: "+date+". Tu progreso y tu equipo se mantienen."}
@@ -51,10 +52,12 @@ $("join-date").textContent=new Date().toLocaleDateString("es-AR");
 $("advance-month").addEventListener("click",advanceMonth);
 document.querySelectorAll("[data-test]").forEach(b=>b.addEventListener("click",()=>startTest(b.dataset.test)));
 let selectedDifficulty="easy";
+let memoryTimer=null;
 const difficultyDescriptions={easy:"Pruebas introductorias para desarrollar tus aptitudes.",normal:"Desafíos que requieren atención y planificación.",hard:"Pruebas exigentes que combinan varias aptitudes.",special:"Desafíos especiales de liderazgo y toma de decisiones."};
 document.querySelectorAll("[data-difficulty]").forEach(tab=>tab.addEventListener("click",()=>{selectedDifficulty=tab.dataset.difficulty;document.querySelectorAll("[data-difficulty]").forEach(t=>{const active=t===tab;t.classList.toggle("active",active);t.setAttribute("aria-selected",String(active))});$("difficulty-description").textContent=difficultyDescriptions[selectedDifficulty];$("exercise").innerHTML='<div class="exercise-empty-mark">R</div><span class="eyebrow">SALA DE PRUEBAS</span><h3>Seleccioná una actividad</h3><p class="muted">Dificultad actualizada. Elegí cualquiera de las cinco disciplinas.</p>'}));
 document.querySelectorAll("[data-difficulty-card]").forEach(card=>card.hidden=false);
 function startTest(type){
+ if(memoryTimer!==null){clearTimeout(memoryTimer);memoryTimer=null}
  if(!state.teamConfirmed){showPage("equipo");return}
  const box=$("exercise");box.scrollIntoView({behavior:"smooth",block:"start"});
  const level={easy:0,normal:1,hard:2,special:3}[selectedDifficulty]??0;
@@ -65,20 +68,20 @@ function startTest(type){
   const symbols=["▲","●","◆","■","★","⬟"],length=[4,6,8,10][level],sequence=Array.from({length},()=>symbols[Math.floor(Math.random()*symbols.length)]);
   const task=heading("MEMORIA","Retención de secuencia",`Memorizá ${length} símbolos. La secuencia se ocultará automáticamente.`);
   task.innerHTML=`<div class="memory-sequence" id="sequence">${sequence.join("　")}</div><p class="muted">Prepará tu respuesta antes de que termine el tiempo.</p><button class="primary" id="ready">OCULTAR Y RESPONDER</button>`;
-  const hide=()=>{$("sequence").textContent="SECUENCIA OCULTA";$("ready").remove();const correct=sequence.join(" ");const options=[correct];for(let k=0;k<3;k++){let alt=[...sequence];const pos=(k*2+level)%length;alt[pos]=symbols.find(x=>x!==alt[pos]);options.push(alt.join(" "))}options.sort(()=>Math.random()-.5).forEach(v=>addChoice(task,v,()=>finish(box,v===correct,"Memoria","Inteligencia",xp)))};
-  $("ready").onclick=hide;setTimeout(()=>{if($("ready"))hide()},[7500,5600,4100,2900][level]);
+  const hide=()=>{$("sequence").textContent="SECUENCIA OCULTA";$("ready").remove();const correct=sequence.join(" ");const options=[correct];for(let k=0;k<3;k++){let alt=[...sequence];const pos=(k*2+level)%length;alt[pos]=symbols.find(x=>x!==alt[pos]);options.push(alt.join(" "))}shuffle(options).forEach(v=>addChoice(task,v,()=>finish(box,v===correct,"Memoria","Inteligencia",xp)))};
+  $("ready").onclick=()=>{if(memoryTimer!==null)clearTimeout(memoryTimer);memoryTimer=null;hide()};memoryTimer=setTimeout(()=>{memoryTimer=null;if($("ready"))hide()},[7500,5600,4100,2900][level]);
  }
  if(type==="logistics"){
   const start=level===0?24:level===1?86:level===2?145:275,boxes=start+Math.floor(Math.random()*30),reserve=level===0?8:level===1?17:level===2?26:43,damaged=level===0?2:level===1?5:level===2?9:14,needed=boxes+reserve-damaged;
   const task=heading("LOGÍSTICA","Balance de suministros","Calculá el total disponible después de sumar la reserva y descontar el material dañado.");
   task.innerHTML=`<div class="supply-equation"><span>DEPÓSITO <b>${boxes}</b></span><span>RESERVA <b>+${reserve}</b></span><span>DAÑADO <b>−${damaged}</b></span></div><p>¿Cuántas unidades utilizables quedan?</p>`;
-  const vals=[needed,needed+damaged,needed-reserve,needed+(level+1)*7].sort(()=>Math.random()-.5);choices(task,vals,needed,"Balance logístico","Disciplina");
+  const vals=shuffle([needed,needed+damaged,needed-reserve,needed+(level+1)*7]);choices(task,vals,needed,"Balance logístico","Disciplina");
  }
  if(type==="logic"){
   const n=level===0?3:level===1?5:level===2?7:9,seq=level===0?[n,n+3,n+6,n+9]:level===1?[n,n*2,n*4,n*8]:level===2?[n,n+2,n+6,n+12]:[n,n*2+1,n*4+3,n*8+7],answer=level===0?seq[3]+3:level===1?seq[3]*2:level===2?seq[3]+8:seq[3]*2+15;
   const task=heading("RAZONAMIENTO","Patrón de progresión","Identificá la regla que conecta todos los términos y elegí el siguiente valor.");
   task.innerHTML=`<div class="logic-sequence">${seq.join("<span> / </span>")}<b>?</b></div><p>¿Qué número continúa la secuencia?</p>`;
-  choices(task,[answer,answer+2,answer-3,answer+Math.max(5,n)].sort(()=>Math.random()-.5),answer,"Razonamiento lógico","Inteligencia");
+  choices(task,shuffle([answer,answer+2,answer-3,answer+Math.max(5,n)]),answer,"Razonamiento lógico","Inteligencia");
  }
  if(type==="coordination"){
   const symbols=["▲","●","◆","■"],target=symbols[Math.floor(Math.random()*4)],count=[9,16,25,36][level],items=Array.from({length:count},(_,i)=>i%[3,4,5,6][level]===0?target:symbols[(symbols.indexOf(target)+1+(i%3))%4]);
@@ -95,8 +98,8 @@ function startTest(type){
   ][level];
   const task=heading("LIDERAZGO","Evaluación de criterio",cases.q);
   const leadershipOptions=[...cases.opts],leadershipCorrect=leadershipOptions[cases.ok];
-  leadershipOptions.sort(()=>Math.random()-.5);
-  choices(task,leadershipOptions,leadershipCorrect,"Criterio de liderazgo","Liderazgo");
+  const randomizedLeadershipOptions=shuffle(leadershipOptions);
+  choices(task,randomizedLeadershipOptions,leadershipCorrect,"Criterio de liderazgo","Liderazgo");
  }
 }
 function addChoice(box,value,fn){let b=document.createElement("button");b.className="choice";b.textContent=value;b.onclick=fn;box.appendChild(b)}
@@ -187,7 +190,7 @@ partidas:["ARCHIVO DE PARTIDAS","Mis partidas",()=>`<div class="detail-stat-grid
 logros:["REGISTRO DE MÉRITOS","Logros",()=>`<div class="detail-list"><div><b>${state.completed>0?"✓":"○"} Primeros pasos</b><span>Completá tu primera prueba · ${state.completed>0?"Desbloqueado":"Pendiente"}</span></div><div><b>${state.teamConfirmed?"✓":"○"} Trabajo en equipo</b><span>Confirmá tu equipo · ${state.teamConfirmed?"Desbloqueado":"Pendiente"}</span></div><div><b>${state.level>=5?"✓":"○"} Carrera en ascenso</b><span>Alcanzá el nivel 5 · ${state.level>=5?"Desbloqueado":"Pendiente"}</span></div></div><p>Los reconocimientos se desbloquean jugando. No hace falta conectarse todos los días.</p>`],
 historial:["REGISTRO DE ACTIVIDAD","Historial",()=>state.history.length?`<div class="detail-list">${state.history.slice().reverse().map((x,i)=>`<div><b>${x.name}</b><span>+${x.xp} XP · ${x.date}</span></div>`).join("")}</div>`:`<p>Todavía no hay actividades registradas. Cuando completes una prueba, aparecerá acá.</p>`],
 ayuda:["GUÍA DE INGRESO","Manual del cadete",()=>`<div class="detail-list"><div><b>01 · Formá tu equipo</b><span>Elegí tres compañeros entre los cinco aspirantes.</span></div><div><b>02 · Entrená</b><span>Completá desafíos de memoria, logística, lógica, coordinación y liderazgo.</span></div><div><b>03 · Progresá</b><span>Ganás experiencia y mejorás tus aptitudes.</span></div><div><b>04 · Avanzá la campaña</b><span>El calendario avanza cuando vos pulsás el botón. No hay penalización por descansar.</span></div></div>`],
-planes:["INFORMACIÓN DEL PROYECTO","Planes futuros",()=>`<p>RECLUTA está en desarrollo y actualmente se puede jugar gratis. La posibilidad de ofrecer planes para sostener el proyecto es una idea futura, todavía sin cobros ni suscripciones activas.</p><p>Antes de cualquier pago habrá información clara sobre precios, condiciones y conservación de partidas.</p>`],
+planes:["INFORMACIÓN DEL PROYECTO","Estado del proyecto",()=>`<p>RECLUTA es un proyecto independiente en desarrollo. Todas las funciones disponibles actualmente son gratuitas.</p><p>No hay compras, suscripciones ni funciones de pago.</p>`],
 ajustes:["PREFERENCIAS LOCALES","Configuración",()=>`<div class="detail-setting"><label for="reduce-motion">Reducir animaciones</label><input id="reduce-motion" type="checkbox" ${localStorage.getItem("recluta-reduce-motion")==="1"?"checked":""}></div><p>La preferencia se aplica en este dispositivo.</p>`],
 contacto:["COMUNICACIÓN","Contacto",()=>`<p>RECLUTA es un proyecto independiente en desarrollo. Todavía no hay un canal de soporte público. Por ahora, podés informar errores directamente en el repositorio del proyecto.</p><a class="detail-link" href="https://github.com/REDARMY2026-fal/Recluta/issues" target="_blank" rel="noopener">Ver reportes del proyecto ↗</a>`]
 };
