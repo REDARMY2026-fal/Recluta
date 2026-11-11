@@ -286,7 +286,7 @@ function beginRouteOperation(){
 }
 function routeCellKey(x,y){return x+","+y}
 function moveRoute(dx,dy){
- const p=state.routeProgress;if(!p||p.finished)return;
+ const p=state.routeProgress;if(!p||p.finished||p.failed||p.moves>=24)return;
  const x=p.x+dx,y=p.y+dy,key=routeCellKey(x,y);
  if(x<0||y<0||x>=5||y>=5||routeMap.walls.includes(key)||Math.abs(dx)+Math.abs(dy)!==1)return;
  p.x=x;p.y=y;p.moves++;
@@ -298,6 +298,7 @@ function moveRoute(dx,dy){
   else p.log.unshift("Llegaste a "+destination.label+", pero todavía falta su caja correspondiente.");
  }
  if(p.delivered.length===2){completeRouteOperation();return}
+ if(p.moves>=24){p.failed=true;p.log.unshift("Se agotaron los movimientos disponibles. Reiniciá el recorrido y probá otra ruta.");p.log=p.log.slice(0,5);save();renderRoute();return}
  if(p.moves===8)p.log.unshift("Aviso: revisá el mapa y confirmá el próximo tramo.");
  if(p.moves===16)p.log.unshift("Atención: queda poco margen para completar las entregas.");
  p.log=p.log.slice(0,5);save();renderRoute();
@@ -310,11 +311,11 @@ function renderRoute(){
   const symbol=wall?"▧":player?"R":supply?"▣":dest?(p.delivered.includes(dest.id)?"✓":"◎"):"·";
   const label=wall?"Camino cerrado":player?"Tu equipo":supply?"Caja de "+supply.kind:dest?dest.label:"Casilla libre";
   const cls=wall?"route-wall":player?"route-player":supply?"route-supply":dest?(p.delivered.includes(dest.id)?"route-done":"route-destination"):"route-empty";
-  cells.push(`<button type="button" class="route-cell ${cls}" data-route-x="${x}" data-route-y="${y}" aria-label="${label}" ${wall||Math.abs(p.x-x)+Math.abs(p.y-y)!==1?"disabled":""}>${symbol}<small>${x+1},${y+1}</small></button>`);
+  cells.push(`<button type="button" class="route-cell ${cls}" data-route-x="${x}" data-route-y="${y}" aria-label="${label}" ${wall||p.failed||p.moves>=24||Math.abs(p.x-x)+Math.abs(p.y-y)!==1?"disabled":""}>${symbol}<small>${x+1},${y+1}</small></button>`);
  }
  $("operation-status").textContent="OPERACIÓN EN CURSO · RUTA DE ASISTENCIA";
- $("operation-summary").textContent="Guiá al equipo por el mapa. Cada movimiento consume una acción. Recogé las dos cajas y llevalas a sus destinos.";
- $("operation-content").innerHTML=`<div class="dispatch-hud"><div><span>MOVIMIENTOS</span><b>${p.moves} / 24</b></div><div><span>CAJAS</span><b>${p.collected.length} / 2</b></div><div><span>ENTREGAS</span><b>${p.delivered.length} / 2</b></div></div><div class="route-objectives"><div><b>${p.collected.includes("north")?"✓":"○"} Caja A · Agua</b><span>${p.delivered.includes("north")?"Entregada":"Destino: Punto Norte"}</span></div><div><b>${p.collected.includes("south")?"✓":"○"} Caja B · Botiquines</b><span>${p.delivered.includes("south")?"Entregada":"Destino: Punto Sur"}</span></div></div><div class="route-board-wrap"><div class="route-board" role="group" aria-label="Mapa de ruta de asistencia">${cells.join("")}</div><div class="route-legend"><span>R · Equipo</span><span>▣ · Caja</span><span>◎ · Entrega</span><span>▧ · Bloqueo</span></div></div><div class="route-controls"><button type="button" data-route-move="0,-1" ${p.y===0||routeMap.walls.includes(routeCellKey(p.x,p.y-1))?"disabled":""}>↑</button><div><button type="button" data-route-move="-1,0" ${p.x===0||routeMap.walls.includes(routeCellKey(p.x-1,p.y))?"disabled":""}>←</button><button type="button" data-route-move="0,1" ${p.y===4||routeMap.walls.includes(routeCellKey(p.x,p.y+1))?"disabled":""}>↓</button><button type="button" data-route-move="1,0" ${p.x===4||routeMap.walls.includes(routeCellKey(p.x+1,p.y))?"disabled":""}>→</button></div><span>También podés usar las flechas del teclado.</span></div><div class="route-log"><b>COMUNICACIONES DEL EQUIPO</b>${p.log.map(line=>`<p>▸ ${line}</p>`).join("")}</div><button class="secondary" id="restart-route">REINICIAR RECORRIDO</button>`;
+ $("operation-summary").textContent=p.failed?"Se agotó el margen de movimientos. Reiniciá el recorrido para volver a intentarlo.":"Guiá al equipo por el mapa. Cada movimiento consume una acción. Recogé las dos cajas y llevalas a sus destinos.";
+ $("operation-content").innerHTML=`<div class="dispatch-hud"><div><span>MOVIMIENTOS</span><b>${p.moves} / 24</b></div><div><span>CAJAS</span><b>${p.collected.length} / 2</b></div><div><span>ENTREGAS</span><b>${p.delivered.length} / 2</b></div></div><div class="route-objectives"><div><b>${p.collected.includes("north")?"✓":"○"} Caja A · Agua</b><span>${p.delivered.includes("north")?"Entregada":"Destino: Punto Norte"}</span></div><div><b>${p.collected.includes("south")?"✓":"○"} Caja B · Botiquines</b><span>${p.delivered.includes("south")?"Entregada":"Destino: Punto Sur"}</span></div></div><div class="route-board-wrap"><div class="route-board" role="group" aria-label="Mapa de ruta de asistencia">${cells.join("")}</div><div class="route-legend"><span>R · Equipo</span><span>▣ · Caja</span><span>◎ · Entrega</span><span>▧ · Bloqueo</span></div></div><div class="route-controls"><button type="button" data-route-move="0,-1" ${p.failed||p.moves>=24||p.y===0||routeMap.walls.includes(routeCellKey(p.x,p.y-1))?"disabled":""}>↑</button><div><button type="button" data-route-move="-1,0" ${p.failed||p.moves>=24||p.x===0||routeMap.walls.includes(routeCellKey(p.x-1,p.y))?"disabled":""}>←</button><button type="button" data-route-move="0,1" ${p.failed||p.moves>=24||p.y===4||routeMap.walls.includes(routeCellKey(p.x,p.y+1))?"disabled":""}>↓</button><button type="button" data-route-move="1,0" ${p.failed||p.moves>=24||p.x===4||routeMap.walls.includes(routeCellKey(p.x+1,p.y))?"disabled":""}>→</button></div><span>También podés usar las flechas del teclado.</span></div><div class="route-log"><b>COMUNICACIONES DEL EQUIPO</b>${p.log.map(line=>`<p>▸ ${line}</p>`).join("")}</div><button class="secondary" id="restart-route">REINICIAR RECORRIDO</button>`;
  document.querySelectorAll("[data-route-move]").forEach(b=>b.onclick=()=>{const [dx,dy]=b.dataset.routeMove.split(",").map(Number);moveRoute(dx,dy)});
  document.querySelectorAll("[data-route-x]").forEach(b=>b.onclick=()=>{moveRoute(Number(b.dataset.route-x)-p.x,Number(b.dataset.route-y)-p.y)});
  $("restart-route").onclick=()=>{state.routeProgress={x:0,y:0,moves:0,collected:[],delivered:[],log:["Recorrido reiniciado desde el centro de distribución."],finished:false};save();renderRoute()};
