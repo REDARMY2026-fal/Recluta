@@ -321,3 +321,36 @@ input,select,textarea{
 @media(max-width:560px){
   .candidate-avatar{width:72px;height:84px}
 }
+
+
+/* RECLUTA 0.4 · operación logística interactiva */
+.dispatch-hud{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:16px 0}
+.dispatch-hud>div{display:flex;flex-direction:column;gap:5px;padding:12px;background:#111a13;border:1px solid #465640}
+.dispatch-hud span,.dispatch-inventory span{font-size:8px;letter-spacing:1.1px;color:#aebe8d;font-weight:800}
+.dispatch-hud b{font-size:12px;color:#e6edda}
+.dispatch-intro h3{font:700 25px 'Barlow Condensed','Arial Narrow',sans-serif;margin:8px 0;color:#edf1e5}
+.dispatch-intro p{font-size:12px;line-height:1.7;color:#bdc7b8;max-width:760px}
+.dispatch-inventory{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:15px 0}
+.dispatch-inventory>div{display:flex;flex-direction:column;gap:5px;padding:13px;background:linear-gradient(145deg,#29372a,#172119);border:1px solid #5b704c}
+.dispatch-inventory b{font:700 23px Impact;color:#e2eac7}
+.dispatch-inventory small{font-size:9px;color:#aeb9a7}
+.dispatch-map{position:relative;display:grid;gap:12px;padding:35px 14px 15px;margin:15px 0;background-color:#121b14;background-image:linear-gradient(#8b9e6c12 1px,transparent 1px),linear-gradient(90deg,#8b9e6c12 1px,transparent 1px);background-size:24px 24px;border:1px solid #43523e;overflow:hidden}
+.dispatch-map-label{position:absolute;top:10px;left:13px;font-size:8px;letter-spacing:1.3px;color:#9eae82}
+.dispatch-route{position:absolute;left:25px;top:60px;bottom:40px;width:2px;background:repeating-linear-gradient(to bottom,#a9bd7a 0 7px,transparent 7px 13px);opacity:.35}
+.dispatch-location{position:relative;padding:14px;background:#1b271d;border:1px solid #4b5e43;border-left:3px solid #aebe8d}
+.dispatch-location-head{display:flex;align-items:center;gap:11px;margin-bottom:12px}
+.dispatch-pin{display:grid;place-items:center;width:34px;height:34px;flex-shrink:0;background:#34452f;border:1px solid #788c5d;color:#d9e5b9;font-size:20px}
+.dispatch-location h4{margin:0 0 3px;font:700 17px 'Barlow Condensed','Arial Narrow',sans-serif;color:#edf1e5}
+.dispatch-location p{margin:0;font-size:10px;color:#aebaa7}
+.dispatch-resource-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px}
+.dispatch-cell{display:flex;align-items:center;justify-content:space-between;gap:6px;padding:8px;background:#111a13;border:1px solid #394838}
+.dispatch-cell>span{font-size:9px;color:#b9c5ad}
+.dispatch-cell>span b{display:block;margin-top:3px;color:#e1e9cf;font-size:11px}
+.dispatch-controls{display:flex;align-items:center;gap:5px}
+.dispatch-controls button{width:28px;height:28px;background:#2b392b;border:1px solid #657a50;color:#edf2e4;font-size:17px;font-weight:800}
+.dispatch-controls button:hover:not(:disabled){background:#506443}
+.dispatch-controls button:disabled{opacity:.35}
+.dispatch-controls strong{min-width:12px;text-align:center;color:#e3eacb;font-size:12px}
+.dispatch-actions{display:flex;gap:9px;flex-wrap:wrap;margin:15px 0}
+.dispatch-actions button{min-height:42px}
+@media(max-width:650px){.dispatch-resource-grid{grid-template-columns:1fr}.dispatch-cell{padding:9px 11px}.dispatch-hud b{font-size:10px}.dispatch-hud>div{padding:9px}.dispatch-inventory b{font-size:19px}.dispatch-map{padding-left:9px;padding-right:9px}.dispatch-location{padding:11px}}
