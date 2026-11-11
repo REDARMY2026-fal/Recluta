@@ -1,4 +1,4 @@
-const defaultState={xp:0,level:1,completed:0,skills:{Disciplina:1,Resistencia:1,Inteligencia:1,Coordinación:1,Liderazgo:1},history:[],team:[],teamConfirmed:false,campaignMonth:0,campaignLog:[],operations:[],operationProgress:null};
+const defaultState={xp:0,level:1,completed:0,skills:{Disciplina:1,Resistencia:1,Inteligencia:1,Coordinación:1,Liderazgo:1},history:[],team:[],teamConfirmed:false,campaignMonth:0,campaignLog:[],operations:[],operationProgress:null,routeProgress:null};
 let state;
 try{
  state={...defaultState,...JSON.parse(localStorage.getItem("recluta-save")||"{}")};
@@ -138,7 +138,7 @@ function renderOperations(){
  const done=state.operations.some(o=>o.id==="first-destination");
  $("begin-operation").textContent=done?"OPERACIÓN COMPLETADA":state.operationProgress?"CONTINUAR OPERACIÓN →":"INICIAR OPERACIÓN →";
  $("begin-operation").disabled=done||!state.teamConfirmed;
- $("begin-operation").onclick=beginOperation;
+ $("begin-operation").onclick=beginOperation;\n renderRouteOperation();
  $("operation-status").textContent=done?"Operación completada":state.operationProgress?"Operación en curso":"Esperando asignación";
  $("operation-summary").textContent=done?"La primera misión ya figura en tu expediente.":state.operationProgress?"Tu distribución quedó guardada. Podés continuar desde donde la dejaste.":"Prepará al equipo y organizá los suministros para tres puntos de asistencia.";
  if(state.operationProgress&&!done)showOperationStep();
@@ -266,8 +266,71 @@ if(state.operationProgress?.mission==="first-destination"){
   p.decisions=Array.isArray(p.decisions)?p.decisions.filter(Number.isInteger):[];
  }else state.operationProgress=null;
 }
-function enterGame(){ $("lobby").hidden=true;$("game-app").hidden=false;showPage(state.teamConfirmed?"inicio":"equipo");window.scrollTo({top:0,behavior:"smooth"}); }
-$("new-game").addEventListener("click",()=>{if(localStorage.getItem("recluta-save")&&!confirm("¿Empezar una partida nueva? El progreso local actual se reemplazará."))return;state={xp:0,level:1,completed:0,skills:{Disciplina:1,Resistencia:1,Inteligencia:1,Coordinación:1,Liderazgo:1},history:[],team:[],teamConfirmed:false,campaignMonth:0,campaignLog:[],operations:[],operationProgress:null};selectedTeam=[];save();enterGame()});
+
+const routeMap={width:5,height:5,start:{x:0,y:0},walls:["1,1","2,2","3,2","3,3"],supplies:[{id:"north",x:2,y:0,label:"CAJA A",kind:"Agua"},{id:"south",x:0,y:3,label:"CAJA B",kind:"Botiquines"}],destinations:[{id:"north",x:4,y:1,label:"PUNTO NORTE",needs:"north"},{id:"south",x:4,y:4,label:"PUNTO SUR",needs:"south"}]};
+function renderRouteOperation(){
+ const done=state.operations.some(o=>o.id==="storm-route"),unlocked=state.operations.some(o=>o.id==="first-destination");
+ $("route-operation-status").textContent=done?"Operación completada":state.routeProgress?"Ruta en curso":unlocked?"Disponible":"Bloqueada";
+ $("route-operation-summary").textContent=done?"La ruta de asistencia quedó registrada.":state.routeProgress?"Tu equipo está en ruta. Podés continuar desde donde quedó.":unlocked?"Mové al equipo por el mapa, recogé las dos cajas y entregalas en los puntos indicados.":"Completá Primer destino para desbloquear esta operación.";
+ $("begin-route-operation").textContent=done?"OPERACIÓN COMPLETADA":state.routeProgress?"CONTINUAR RUTA →":"INICIAR RUTA →";
+ $("begin-route-operation").disabled=done||!state.teamConfirmed||!unlocked;
+ $("begin-route-operation").onclick=beginRouteOperation;
+ if(state.routeProgress&&!done)renderRoute();
+}
+function beginRouteOperation(){
+ if(!state.teamConfirmed){showPage("equipo");return}
+ if(!state.operations.some(o=>o.id==="first-destination")||state.operations.some(o=>o.id==="storm-route"))return;
+ if(!state.routeProgress)state.routeProgress={x:0,y:0,moves:0,collected:[],delivered:[],log:["El equipo salió del centro de distribución."],finished:false};
+ renderRoute();
+}
+function routeCellKey(x,y){return x+","+y}
+function moveRoute(dx,dy){
+ const p=state.routeProgress;if(!p||p.finished)return;
+ const x=p.x+dx,y=p.y+dy,key=routeCellKey(x,y);
+ if(x<0||y<0||x>=5||y>=5||routeMap.walls.includes(key)||Math.abs(dx)+Math.abs(dy)!==1)return;
+ p.x=x;p.y=y;p.moves++;
+ const supply=routeMap.supplies.find(item=>item.x===x&&item.y===y&&!p.collected.includes(item.id));
+ if(supply){p.collected.push(supply.id);p.log.unshift("Caja recogida: "+supply.kind+".")}
+ const destination=routeMap.destinations.find(item=>item.x===x&&item.y===y&&!p.delivered.includes(item.id));
+ if(destination){
+  if(p.collected.includes(destination.needs)){p.delivered.push(destination.id);p.log.unshift("Entrega confirmada: "+destination.label+".")}
+  else p.log.unshift("Llegaste a "+destination.label+", pero todavía falta su caja correspondiente.");
+ }
+ if(p.delivered.length===2){completeRouteOperation();return}
+ if(p.moves===8)p.log.unshift("Aviso: revisá el mapa y confirmá el próximo tramo.");
+ if(p.moves===16)p.log.unshift("Atención: queda poco margen para completar las entregas.");
+ p.log=p.log.slice(0,5);save();renderRoute();
+}
+function renderRoute(){
+ const p=state.routeProgress;if(!p)return;
+ const cells=[];
+ for(let y=0;y<5;y++)for(let x=0;x<5;x++){
+  const key=routeCellKey(x,y),wall=routeMap.walls.includes(key),supply=routeMap.supplies.find(a=>a.x===x&&a.y===y&&!p.collected.includes(a.id)),dest=routeMap.destinations.find(a=>a.x===x&&a.y===y),player=p.x===x&&p.y===y;
+  const symbol=wall?"▧":player?"R":supply?"▣":dest?(p.delivered.includes(dest.id)?"✓":"◎"):"·";
+  const label=wall?"Camino cerrado":player?"Tu equipo":supply?"Caja de "+supply.kind:dest?dest.label:"Casilla libre";
+  const cls=wall?"route-wall":player?"route-player":supply?"route-supply":dest?(p.delivered.includes(dest.id)?"route-done":"route-destination"):"route-empty";
+  cells.push(`<button type="button" class="route-cell ${cls}" data-route-x="${x}" data-route-y="${y}" aria-label="${label}" ${wall||Math.abs(p.x-x)+Math.abs(p.y-y)!==1?"disabled":""}>${symbol}<small>${x+1},${y+1}</small></button>`);
+ }
+ $("operation-status").textContent="OPERACIÓN EN CURSO · RUTA DE ASISTENCIA";
+ $("operation-summary").textContent="Guiá al equipo por el mapa. Cada movimiento consume una acción. Recogé las dos cajas y llevalas a sus destinos.";
+ $("operation-content").innerHTML=`<div class="dispatch-hud"><div><span>MOVIMIENTOS</span><b>${p.moves} / 24</b></div><div><span>CAJAS</span><b>${p.collected.length} / 2</b></div><div><span>ENTREGAS</span><b>${p.delivered.length} / 2</b></div></div><div class="route-objectives"><div><b>${p.collected.includes("north")?"✓":"○"} Caja A · Agua</b><span>${p.delivered.includes("north")?"Entregada":"Destino: Punto Norte"}</span></div><div><b>${p.collected.includes("south")?"✓":"○"} Caja B · Botiquines</b><span>${p.delivered.includes("south")?"Entregada":"Destino: Punto Sur"}</span></div></div><div class="route-board-wrap"><div class="route-board" role="group" aria-label="Mapa de ruta de asistencia">${cells.join("")}</div><div class="route-legend"><span>R · Equipo</span><span>▣ · Caja</span><span>◎ · Entrega</span><span>▧ · Bloqueo</span></div></div><div class="route-controls"><button type="button" data-route-move="0,-1" ${p.y===0||routeMap.walls.includes(routeCellKey(p.x,p.y-1))?"disabled":""}>↑</button><div><button type="button" data-route-move="-1,0" ${p.x===0||routeMap.walls.includes(routeCellKey(p.x-1,p.y))?"disabled":""}>←</button><button type="button" data-route-move="0,1" ${p.y===4||routeMap.walls.includes(routeCellKey(p.x,p.y+1))?"disabled":""}>↓</button><button type="button" data-route-move="1,0" ${p.x===4||routeMap.walls.includes(routeCellKey(p.x+1,p.y))?"disabled":""}>→</button></div><span>También podés usar las flechas del teclado.</span></div><div class="route-log"><b>COMUNICACIONES DEL EQUIPO</b>${p.log.map(line=>`<p>▸ ${line}</p>`).join("")}</div><button class="secondary" id="restart-route">REINICIAR RECORRIDO</button>`;
+ document.querySelectorAll("[data-route-move]").forEach(b=>b.onclick=()=>{const [dx,dy]=b.dataset.routeMove.split(",").map(Number);moveRoute(dx,dy)});
+ document.querySelectorAll("[data-route-x]").forEach(b=>b.onclick=()=>{moveRoute(Number(b.dataset.route-x)-p.x,Number(b.dataset.route-y)-p.y)});
+ $("restart-route").onclick=()=>{state.routeProgress={x:0,y:0,moves:0,collected:[],delivered:[],log:["Recorrido reiniciado desde el centro de distribución."],finished:false};save();renderRoute()};
+}
+function completeRouteOperation(){
+ const p=state.routeProgress;if(!p||state.operations.some(o=>o.id==="storm-route"))return;
+ const score=Math.max(20,100-Math.max(0,p.moves-18)*8),xp=score>=90?75:score>=65?60:45;
+ const grade=score>=90?"DESTACADA":score>=65?"SATISFACTORIA":"COMPLETADA";
+ state.operations.push({id:"storm-route",name:"RUTA BAJO PRESIÓN",grade,xp,date:campaignDate(),score,moves:p.moves});
+ p.finished=true;save();award("Operación: Ruta bajo presión",xp,"Coordinación");
+ $("operation-status").textContent="OPERACIÓN COMPLETADA · "+grade;
+ $("operation-summary").textContent="Las dos entregas llegaron a destino. El recorrido quedó registrado.";
+ $("operation-content").innerHTML=`<div class="operation-result"><span>INFORME DE RUTA</span><strong>${grade}</strong><b>+${xp} XP</b><p>${p.moves} movimientos · 2 entregas confirmadas · puntuación ${score}/100.</p><p>${state.team.map(id=>candidates.find(c=>c.id===id)?.name).filter(Boolean).join(" · ")} completaron el recorrido.</p></div><button class="secondary" id="return-route">VOLVER AL CENTRO DE MANDO</button>`;
+ $("return-route").onclick=()=>showPage("inicio");renderOperations();
+}
+\nfunction enterGame(){ $("lobby").hidden=true;$("game-app").hidden=false;showPage(state.teamConfirmed?"inicio":"equipo");window.scrollTo({top:0,behavior:"smooth"}); }
+$("new-game").addEventListener("click",()=>{if(localStorage.getItem("recluta-save")&&!confirm("¿Empezar una partida nueva? El progreso local actual se reemplazará."))return;state={xp:0,level:1,completed:0,skills:{Disciplina:1,Resistencia:1,Inteligencia:1,Coordinación:1,Liderazgo:1},history:[],team:[],teamConfirmed:false,campaignMonth:0,campaignLog:[],operations:[],operationProgress:null,routeProgress:null};selectedTeam=[];save();enterGame()});
 $("continue-game").addEventListener("click",enterGame);
 const lobbyDetailData={
 partidas:["ARCHIVO DE PARTIDAS","Mis partidas",()=>`<div class="detail-stat-grid"><div><b>${state.teamConfirmed?"ACTIVA":"SIN INICIAR"}</b><small>Estado de carrera</small></div><div><b>${campaignDate()}</b><small>Período actual</small></div><div><b>NIVEL ${state.level}</b><small>${state.xp} XP acumulados en el nivel</small></div></div><p>Tu partida se guarda automáticamente en este navegador. Para jugar en otro dispositivo necesitaremos implementar exportación o cuentas con servidor.</p><button class="detail-action" id="detail-continue">ABRIR MI PARTIDA →</button>`],
