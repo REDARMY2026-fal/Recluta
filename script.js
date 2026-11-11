@@ -318,6 +318,12 @@ function renderRoute(){
  document.querySelectorAll("[data-route-x]").forEach(b=>b.onclick=()=>{moveRoute(Number(b.dataset.route-x)-p.x,Number(b.dataset.route-y)-p.y)});
  $("restart-route").onclick=()=>{state.routeProgress={x:0,y:0,moves:0,collected:[],delivered:[],log:["Recorrido reiniciado desde el centro de distribución."],finished:false};save();renderRoute()};
 }
+document.addEventListener("keydown",event=>{
+ if(!state.routeProgress||state.routeProgress.finished||!$("operaciones")?.classList.contains("active-page"))return;
+ if(["INPUT","TEXTAREA","SELECT"].includes(document.activeElement?.tagName))return;
+ const keys={ArrowUp:[0,-1],ArrowDown:[0,1],ArrowLeft:[-1,0],ArrowRight:[1,0]};
+ if(keys[event.key]){event.preventDefault();moveRoute(...keys[event.key])}
+});
 function completeRouteOperation(){
  const p=state.routeProgress;if(!p||state.operations.some(o=>o.id==="storm-route"))return;
  const score=Math.max(20,100-Math.max(0,p.moves-18)*8),xp=score>=90?75:score>=65?60:45;
