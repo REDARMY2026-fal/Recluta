@@ -46,21 +46,21 @@ $("advance-month").addEventListener("click",advanceMonth);
 document.querySelectorAll("[data-test]").forEach(b=>b.addEventListener("click",()=>startTest(b.dataset.test)));
 let selectedDifficulty="easy";
 const difficultyDescriptions={easy:"Pruebas introductorias para desarrollar tus aptitudes.",normal:"Desafíos que requieren atención y planificación.",hard:"Pruebas exigentes que combinan varias aptitudes.",special:"Desafíos especiales de liderazgo y toma de decisiones."};
-document.querySelectorAll("[data-difficulty]").forEach(tab=>tab.addEventListener("click",()=>{selectedDifficulty=tab.dataset.difficulty;document.querySelectorAll("[data-difficulty]").forEach(t=>{const active=t===tab;t.classList.toggle("active",active);t.setAttribute("aria-selected",String(active))});document.querySelectorAll("[data-difficulty-card]").forEach(card=>card.hidden=card.dataset.difficultyCard!==selectedDifficulty);$("difficulty-description").textContent=difficultyDescriptions[selectedDifficulty]}));
-document.querySelectorAll("[data-difficulty-card]").forEach(card=>card.hidden=card.dataset.difficultyCard!=="easy");
+document.querySelectorAll("[data-difficulty]").forEach(tab=>tab.addEventListener("click",()=>{selectedDifficulty=tab.dataset.difficulty;document.querySelectorAll("[data-difficulty]").forEach(t=>{const active=t===tab;t.classList.toggle("active",active);t.setAttribute("aria-selected",String(active))});$("difficulty-description").textContent=difficultyDescriptions[selectedDifficulty];$("exercise").innerHTML='<div class="exercise-empty-mark">R</div><span class="eyebrow">SALA DE PRUEBAS</span><h3>Seleccioná una actividad</h3><p class="muted">Dificultad actualizada. Elegí cualquiera de las cinco disciplinas.</p>'}));
+document.querySelectorAll("[data-difficulty-card]").forEach(card=>card.hidden=false);
 function startTest(type){
  if(!state.teamConfirmed){showPage("equipo");return}
  const box=$("exercise");box.scrollIntoView({behavior:"smooth",block:"start"});
  const level={easy:0,normal:1,hard:2,special:3}[selectedDifficulty]??0;
  const xp=[15,20,25,30][level];
  const heading=(tag,title,desc)=>{box.innerHTML=`<div class="exercise-heading"><span class="eyebrow">EVALUACIÓN · ${tag} · ${selectedDifficulty.toUpperCase()}</span><h3>${title}</h3><p>${desc}</p><span class="exercise-reward">+ ${xp} XP</span></div><div class="exercise-task" id="exercise-task"></div>`;return $("exercise-task")};
- const choices=(task,items,correct,name,skill)=>items.forEach(v=>addChoice(task,v,()=>finish(box,v===correct,name,skill)));
+ const choices=(task,items,correct,name,skill)=>items.forEach(v=>addChoice(task,v,()=>finish(box,v===correct,name,skill,xp)));
  if(type==="memory"){
   const symbols=["▲","●","◆","■","★","⬟"],length=[4,6,8,10][level],sequence=Array.from({length},()=>symbols[Math.floor(Math.random()*symbols.length)]);
   const task=heading("MEMORIA","Retención de secuencia",`Memorizá ${length} símbolos. La secuencia se ocultará automáticamente.`);
   task.innerHTML=`<div class="memory-sequence" id="sequence">${sequence.join("　")}</div><p class="muted">Prepará tu respuesta antes de que termine el tiempo.</p><button class="primary" id="ready">OCULTAR Y RESPONDER</button>`;
   const hide=()=>{$("sequence").textContent="SECUENCIA OCULTA";$("ready").remove();const correct=sequence.join(" ");const options=[correct];for(let k=0;k<3;k++){let alt=[...sequence];const pos=(k*2+level)%length;alt[pos]=symbols.find(x=>x!==alt[pos]);options.push(alt.join(" "))}options.sort(()=>Math.random()-.5).forEach(v=>addChoice(task,v,v===correct?"correct":null,"Memoria","Inteligencia"))};
-  $("ready").onclick=hide;if(level>0)setTimeout(()=>{if($("ready"))hide()},Math.max(1800,5200-level*900));
+  $("ready").onclick=hide;setTimeout(()=>{if($("ready"))hide()},[7500,5600,4100,2900][level]);
  }
  if(type==="logistics"){
   const start=level===0?24:level===1?86:level===2?145:275,boxes=start+Math.floor(Math.random()*30),reserve=level===0?8:level===1?17:level===2?26:43,damaged=level===0?2:level===1?5:level===2?9:14,needed=boxes+reserve-damaged;
@@ -78,7 +78,7 @@ function startTest(type){
   const symbols=["▲","●","◆","■"],target=symbols[Math.floor(Math.random()*4)],count=[9,16,25,36][level],items=Array.from({length:count},(_,i)=>i%[3,4,5,6][level]===0?target:symbols[(symbols.indexOf(target)+1+(i%3))%4]);
   const task=heading("ATENCIÓN","Detección de patrones","Encontrá el símbolo objetivo entre los distractores. La ubicación cambia en cada intento.");
   task.innerHTML=`<p class="target-symbol">OBJETIVO: <b>${target}</b></p><div class="symbol-grid" style="--symbol-cols:${[3,4,5,6][level]}">${items.map((v,i)=>`<button class="symbol-cell" data-symbol-index="${i}">${v}</button>`).join("")}</div>`;
-  task.querySelectorAll("[data-symbol-index]").forEach((el,i)=>el.onclick=()=>finish(box,items[i]===target,"Atención visual","Coordinación"));
+  task.querySelectorAll("[data-symbol-index]").forEach((el,i)=>el.onclick=()=>finish(box,items[i]===target,"Atención visual","Coordinación",xp));
  }
  if(type==="leadership"){
   const cases=[
@@ -92,7 +92,7 @@ function startTest(type){
  }
 }
 function addChoice(box,value,fn){let b=document.createElement("button");b.className="choice";b.textContent=value;b.onclick=fn;box.appendChild(b)}
-function finish(box,correct,name,skill){box.querySelectorAll("button").forEach(b=>b.disabled=true);if(correct){const gained=({easy:15,normal:20,hard:25,special:30})[selectedDifficulty]||15;award(name,gained,skill);box.insertAdjacentHTML("beforeend",`<p class="feedback">✓ PRUEBA SUPERADA · +${gained} XP</p>`)}else{box.insertAdjacentHTML("beforeend",'<p class="feedback">Prueba no superada. Podés intentarlo nuevamente.</p>')}let again=document.createElement("button");again.className="secondary";again.textContent="VOLVER A ENTRENAMIENTO";again.onclick=()=>{box.innerHTML='<span class="eyebrow">SALA DE PRUEBAS</span><h3>Seleccioná una actividad</h3><p class="muted">Tus resultados se registrarán en tu expediente.</p>'};box.appendChild(again)}
+function finish(box,correct,name,skill,gained){box.querySelectorAll("button").forEach(b=>b.disabled=true);if(correct){award(name,gained,skill);box.insertAdjacentHTML("beforeend",`<p class="feedback">✓ PRUEBA SUPERADA · +${gained} XP</p>`)}else{box.insertAdjacentHTML("beforeend",'<p class="feedback">Prueba no superada. Podés intentarlo nuevamente.</p>')}let again=document.createElement("button");again.className="secondary";again.textContent="VOLVER A ENTRENAMIENTO";again.onclick=()=>{box.innerHTML='<span class="eyebrow">SALA DE PRUEBAS</span><h3>Seleccioná una actividad</h3><p class="muted">Tus resultados se registrarán en tu expediente.</p>'};box.appendChild(again)}
 
 
 
