@@ -59,7 +59,7 @@ function startTest(type){
   const symbols=["▲","●","◆","■","★","⬟"],length=[4,6,8,10][level],sequence=Array.from({length},()=>symbols[Math.floor(Math.random()*symbols.length)]);
   const task=heading("MEMORIA","Retención de secuencia",`Memorizá ${length} símbolos. La secuencia se ocultará automáticamente.`);
   task.innerHTML=`<div class="memory-sequence" id="sequence">${sequence.join("　")}</div><p class="muted">Prepará tu respuesta antes de que termine el tiempo.</p><button class="primary" id="ready">OCULTAR Y RESPONDER</button>`;
-  const hide=()=>{$("sequence").textContent="SECUENCIA OCULTA";$("ready").remove();const correct=sequence.join(" ");const options=[correct];for(let k=0;k<3;k++){let alt=[...sequence];const pos=(k*2+level)%length;alt[pos]=symbols.find(x=>x!==alt[pos]);options.push(alt.join(" "))}options.sort(()=>Math.random()-.5).forEach(v=>addChoice(task,v,v===correct?"correct":null,"Memoria","Inteligencia"))};
+  const hide=()=>{$("sequence").textContent="SECUENCIA OCULTA";$("ready").remove();const correct=sequence.join(" ");const options=[correct];for(let k=0;k<3;k++){let alt=[...sequence];const pos=(k*2+level)%length;alt[pos]=symbols.find(x=>x!==alt[pos]);options.push(alt.join(" "))}options.sort(()=>Math.random()-.5).forEach(v=>addChoice(task,v,()=>finish(box,v===correct,"Memoria","Inteligencia",xp)))};
   $("ready").onclick=hide;setTimeout(()=>{if($("ready"))hide()},[7500,5600,4100,2900][level]);
  }
  if(type==="logistics"){
@@ -88,7 +88,9 @@ function startTest(type){
    {q:"La información disponible no alcanza para tomar una decisión segura.",opts:["Identifico qué falta, pido datos y comunico qué decisión puede esperar.","Completo los datos con una suposición razonable.","Elijo la opción más rápida y no registro la incertidumbre.","Transfiero toda la responsabilidad a otra persona."],ok:0}
   ][level];
   const task=heading("LIDERAZGO","Evaluación de criterio",cases.q);
-  choices(task,cases.opts,cases.opts[cases.ok],"Criterio de liderazgo","Liderazgo");
+  const leadershipOptions=[...cases.opts],leadershipCorrect=leadershipOptions[cases.ok];
+  leadershipOptions.sort(()=>Math.random()-.5);
+  choices(task,leadershipOptions,leadershipCorrect,"Criterio de liderazgo","Liderazgo");
  }
 }
 function addChoice(box,value,fn){let b=document.createElement("button");b.className="choice";b.textContent=value;b.onclick=fn;box.appendChild(b)}
