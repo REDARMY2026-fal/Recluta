@@ -354,3 +354,15 @@ input,select,textarea{
 .dispatch-actions{display:flex;gap:9px;flex-wrap:wrap;margin:15px 0}
 .dispatch-actions button{min-height:42px}
 @media(max-width:650px){.dispatch-resource-grid{grid-template-columns:1fr}.dispatch-cell{padding:9px 11px}.dispatch-hud b{font-size:10px}.dispatch-hud>div{padding:9px}.dispatch-inventory b{font-size:19px}.dispatch-map{padding-left:9px;padding-right:9px}.dispatch-location{padding:11px}}
+
+/* RECLUTA · fase de decisiones de campo */
+.dispatch-event{padding:20px;background:linear-gradient(145deg,#263327,#151e17);border:1px solid #596c4c;border-left:4px solid #c4d49a;margin:16px 0;box-shadow:0 12px 28px #0003}
+.dispatch-event h3{font:700 28px 'Barlow Condensed','Arial Narrow',sans-serif;color:#f0f2e8;margin:9px 0}
+.dispatch-event>p{font-size:12px;line-height:1.8;color:#c1cbbb}
+.dispatch-event-question{padding:14px;background:#111a13;border:1px solid #465640;color:#e6edda;font-size:13px;line-height:1.7;margin:16px 0}
+.decision-letter{display:inline-grid;place-items:center;width:25px;height:25px;margin-right:10px;background:#3b4b35;border:1px solid #71865a;color:#e4edcf;font-weight:900}
+.operation-choice{display:flex;align-items:center;gap:4px}
+.operation-choice.decision-correct{border-color:#a9c77c;background:#2b402b}
+.operation-choice.decision-wrong{border-color:#b77c68;background:#402b26}
+.operation-choice:disabled{opacity:1}
+@media(max-width:560px){.dispatch-event{padding:15px}.dispatch-event h3{font-size:24px}.dispatch-event-question{font-size:12px}}
