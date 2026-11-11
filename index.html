@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
   <meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><meta name="theme-color" content="#151b16">
-  <title>RECLUTA | Centro de entrenamiento</title><link rel="stylesheet" href="style.css?v=8">
+  <title>RECLUTA | Centro de entrenamiento</title><link rel="stylesheet" href="style.css?v=9">
 </head>
 <body>
 <section id="lobby" class="lobby">
@@ -70,12 +70,19 @@
     </section>
     <section id="entrenamiento" class="page">
       <div class="section-heading"><div><span class="eyebrow">ÁREA DE INSTRUCCIÓN</span><h2>Pruebas disponibles</h2><p class="muted">Desafíos de lógica, memoria, coordinación y organización.</p></div></div>
+      <div class="difficulty-tabs" role="tablist" aria-label="Dificultad">
+        <button class="difficulty-tab active" data-difficulty="easy" role="tab" aria-selected="true">SENCILLA <b>15 XP</b></button>
+        <button class="difficulty-tab" data-difficulty="normal" role="tab" aria-selected="false">NORMAL <b>20 XP</b></button>
+        <button class="difficulty-tab" data-difficulty="hard" role="tab" aria-selected="false">DIFÍCIL <b>25 XP</b></button>
+        <button class="difficulty-tab" data-difficulty="special" role="tab" aria-selected="false">ESPECIAL <b>30 XP</b></button>
+      </div>
+      <p class="muted" id="difficulty-description">Pruebas introductorias para desarrollar tus aptitudes.</p>
       <div class="training-grid">
-        <article class="training-card panel"><div class="training-icon">⌁</div><span class="eyebrow">PRUEBA 01 · MEMORIA</span><h3>Secuencia de señales</h3><p>Recordá el orden de una serie de símbolos.</p><button class="secondary" data-test="memory">INICIAR PRUEBA →</button></article>
-        <article class="training-card panel"><div class="training-icon">▤</div><span class="eyebrow">PRUEBA 02 · LOGÍSTICA</span><h3>Control de suministros</h3><p>Resolvé cálculos y organizá recursos ficticios.</p><button class="secondary" data-test="logistics">INICIAR PRUEBA →</button></article>
-        <article class="training-card panel"><div class="training-icon">◈</div><span class="eyebrow">PRUEBA 03 · INTELIGENCIA</span><h3>Desafío lógico</h3><p>Encontrá la respuesta correcta a cada problema.</p><button class="secondary" data-test="logic">INICIAR PRUEBA →</button></article>
-        <article class="training-card panel"><div class="training-icon">⌖</div><span class="eyebrow">PRUEBA 04 · COORDINACIÓN</span><h3>Atención visual</h3><p>Analizá símbolos y detectá el patrón correcto.</p><button class="secondary" data-test="coordination">INICIAR PRUEBA →</button></article>
-        <article class="training-card panel"><div class="training-icon">♧</div><span class="eyebrow">PRUEBA 05 · LIDERAZGO</span><h3>Decisión de equipo</h3><p>Elegí una solución justa para organizar al grupo.</p><button class="secondary" data-test="leadership">INICIAR PRUEBA →</button></article>
+        <article class="training-card panel" data-difficulty-card="easy"><div class="training-icon">⌁</div><span class="eyebrow">MEMORIA</span><h3>Secuencia de señales</h3><p>Recordá el orden de una serie de símbolos.</p><button class="secondary" data-test="memory">INICIAR PRUEBA →</button></article>
+        <article class="training-card panel" data-difficulty-card="normal"><div class="training-icon">▤</div><span class="eyebrow">LOGÍSTICA</span><h3>Control de suministros</h3><p>Resolvé cálculos y organizá recursos ficticios.</p><button class="secondary" data-test="logistics">INICIAR PRUEBA →</button></article>
+        <article class="training-card panel" data-difficulty-card="hard"><div class="training-icon">◈</div><span class="eyebrow">INTELIGENCIA</span><h3>Desafío lógico</h3><p>Resolvé una secuencia de mayor complejidad.</p><button class="secondary" data-test="logic">INICIAR PRUEBA →</button></article>
+        <article class="training-card panel" data-difficulty-card="hard"><div class="training-icon">⌖</div><span class="eyebrow">COORDINACIÓN</span><h3>Atención visual</h3><p>Analizá símbolos y detectá patrones.</p><button class="secondary" data-test="coordination">INICIAR PRUEBA →</button></article>
+        <article class="training-card panel" data-difficulty-card="special"><div class="training-icon">♧</div><span class="eyebrow">LIDERAZGO</span><h3>Decisión de equipo</h3><p>Elegí soluciones ante situaciones complejas.</p><button class="secondary" data-test="leadership">INICIAR PRUEBA →</button></article>
       </div>
       <div class="panel exercise" id="exercise"><span class="eyebrow">SALA DE PRUEBAS</span><h3>Seleccioná una actividad</h3><p class="muted">Tus resultados se registrarán en tu expediente.</p></div>
     </section>
@@ -83,5 +90,6 @@
     <footer>RECLUTA ACADEMY <span>SIMULADOR DE ENTRENAMIENTO · 2026</span></footer>
   </main>
 </div>
-<script src="script.js?v=8"></script>
+<div class="analytics-consent" id="analytics-consent" hidden role="dialog" aria-label="Preferencias de estadísticas"><span>¿Aceptás estadísticas anónimas para ayudarnos a mejorar RECLUTA?</span><button id="analytics-accept">ACEPTAR</button><button id="analytics-reject">RECHAZAR</button></div>
+<script src="script.js?v=9"></script>
 </body></html>
