@@ -151,21 +151,27 @@ function beginOperation(){
 }
 function changeAllocation(place,resource,delta){
  const p=state.operationProgress;if(!p||p.stage!=="allocation")return;
- const current=p.allocations[place][resource];
- const used=Object.values(p.allocations).reduce((sum,row)=>sum+row[resource],0);
+ const target=supplyMission.places.find(x=>x.id===place);
+ if(!target||!Object.hasOwn(target.need,resource))return;
+ const current=p.allocations[place][resource]||0;
+ const used=Object.values(p.allocations).reduce((sum,row)=>sum+(Number(row[resource])||0),0);
  const next=current+delta;
- if(next<0||used+delta>supplyMission.resources[resource])return;
+ // Doble límite: nunca superar la necesidad local ni el inventario general.
+ if(next<0||next>target.need[resource]||used+delta>supplyMission.resources[resource])return;
  p.allocations[place][resource]=next;save();showOperationStep();
 }
 function showOperationStep(){
  const p=state.operationProgress;if(!p)return;
+ if(p.stage==="decisions"){showDecisionStep();return}
  const totals={agua:0,alimentos:0,medicina:0};
  for(const row of Object.values(p.allocations))for(const key of Object.keys(totals))totals[key]+=row[key]||0;
  const resourcesLeft=Object.fromEntries(Object.keys(totals).map(k=>[k,supplyMission.resources[k]-totals[k]]));
  const places=supplyMission.places.map(place=>{
   const cells=Object.keys(totals).map(resource=>{
    const value=p.allocations[place.id][resource]||0,need=place.need[resource];
-   return `<div class="dispatch-cell"><span>${supplyMission.labels[resource]} <b>${value}/${need}</b></span><div class="dispatch-controls"><button type="button" data-adjust="-1" data-place="${place.id}" data-resource="${resource}" aria-label="Quitar ${supplyMission.labels[resource]}">−</button><strong>${value}</strong><button type="button" data-adjust="1" data-place="${place.id}" data-resource="${resource}" aria-label="Agregar ${supplyMission.labels[resource]}">+</button></div></div>`;
+   const used=Object.values(p.allocations).reduce((sum,row)=>sum+(Number(row[resource])||0),0);
+   const left=supplyMission.resources[resource]-used;
+   return `<div class="dispatch-cell"><span>${supplyMission.labels[resource]} <b>${value}/${need}</b></span><div class="dispatch-controls"><button type="button" data-adjust="-1" data-place="${place.id}" data-resource="${resource}" aria-label="Quitar ${supplyMission.labels[resource]}" ${value<=0?"disabled":""}>−</button><strong>${value}</strong><button type="button" data-adjust="1" data-place="${place.id}" data-resource="${resource}" aria-label="Agregar ${supplyMission.labels[resource]}" ${value>=need||left<=0?"disabled":""}>+</button></div></div>`;
   }).join("");
   return `<article class="dispatch-location"><div class="dispatch-location-head"><span class="dispatch-pin">◎</span><div><h4>${place.name}</h4><p>${place.note}</p></div></div><div class="dispatch-resource-grid">${cells}</div></article>`;
  }).join("");
@@ -182,24 +188,77 @@ function validateDispatch(){
  const misses=[];
  supplyMission.places.forEach(place=>Object.keys(place.need).forEach(resource=>{if(p.allocations[place.id][resource]!==place.need[resource])misses.push({place:place.name,resource:supplyMission.labels[resource]})}));
  if(misses.length){p.attempts++;save();showOperationStep();$("dispatch-feedback").textContent="Todavía hay "+misses.length+" asignaciones incorrectas. Revisá las cantidades de cada localidad y probá de nuevo.";return}
- completeOperation();
+ // La distribución correcta desbloquea la fase de decisiones de campo.
+ p.stage="decisions";p.decisionIndex=0;p.decisionScore=0;p.decisionErrors=0;p.decisions=[];
+ save();showDecisionStep();
+}
+const operationDecisions=[
+ {title:"Demora en el traslado",brief:"El traslado al Barrio Norte se demora. Los otros dos puntos ya confirmaron que pueden recibir sus suministros.",question:"¿Cómo reorganizás el trabajo?",options:["Confirmo el nuevo horario, aviso a los tres puntos y reorganizo el orden sin perder el control de las entregas.","Cambio el orden sin avisar para ganar unos minutos.","Doy por entregado el material aunque todavía no llegó."],correct:0,explain:"La coordinación y la información compartida evitan confusiones."},
+ {title:"Cambio en la demanda",brief:"La Escuela Rural informa que su cantidad de asistentes cambió, pero el mensaje no incluye una cifra confirmada.",question:"¿Cuál es tu siguiente paso?",options:["Pido confirmación del dato y registro el cambio antes de modificar el inventario.","Aumento los suministros usando una estimación propia.","Ignoro el aviso y cierro el informe."],correct:0,explain:"Verificar el dato evita asignaciones basadas en suposiciones."},
+ {title:"Registro de recepción",brief:"Dos integrantes informan cantidades distintas sobre los suministros recibidos en Villa Sur.",question:"¿Cómo resolvés la diferencia?",options:["Comparo el registro de salida con la confirmación de recepción y dejo constancia de la diferencia.","Elijo el número más alto para terminar rápido.","Borro ambos registros y continúo."],correct:0,explain:"La trazabilidad permite detectar errores y mantener un registro confiable."}
+];
+function showDecisionStep(){
+ const p=state.operationProgress;if(!p||p.stage!=="decisions")return;
+ const index=Math.min(p.decisionIndex||0,operationDecisions.length-1),event=operationDecisions[index];
+ $("operation-status").textContent="OPERACIÓN EN CURSO · COORDINACIÓN";
+ $("operation-summary").textContent="La distribución fue completada. Ahora resolvé los imprevistos junto al equipo.";
+ $("operation-content").innerHTML=`<div class="dispatch-hud"><div><span>ETAPA</span><b>02 / 02</b></div><div><span>DECISIÓN</span><b>${index+1} / ${operationDecisions.length}</b></div><div><span>CRITERIO</span><b>${p.decisionScore||0} / 100</b></div></div><div class="operation-progress"><span style="width:${Math.round((index/operationDecisions.length)*100)}%"></span></div><section class="dispatch-event"><span class="eyebrow">INFORME DE SITUACIÓN · ${String(index+1).padStart(2,"0")}</span><h3>${event.title}</h3><p>${event.brief}</p><div class="dispatch-event-question"><b>${event.question}</b></div><div class="operation-choices" id="decision-options">${event.options.map((option,i)=>`<button class="operation-choice" type="button" data-decision="${i}"><span class="decision-letter">${String.fromCharCode(65+i)}</span>${option}</button>`).join("")}</div><p class="operation-feedback" id="decision-feedback" aria-live="polite">Elegí una respuesta. Cada decisión influye en el resultado final.</p></section>`;
+ document.querySelectorAll("[data-decision]").forEach(button=>button.onclick=()=>resolveDecision(Number(button.dataset.decision)));
+}
+function resolveDecision(choice){
+ const p=state.operationProgress;if(!p||p.stage!=="decisions")return;
+ const index=p.decisionIndex||0,event=operationDecisions[index];if(!event||p.decisions?.includes(index))return;
+ const correct=choice===event.correct;
+ p.decisions=Array.isArray(p.decisions)?p.decisions:[];
+ p.decisions.push(index);
+ if(correct)p.decisionScore=(p.decisionScore||0)+Math.round(100/operationDecisions.length);
+ else p.decisionErrors=(p.decisionErrors||0)+1;
+ save();
+ const options=$("decision-options");if(options)options.querySelectorAll("button").forEach((button,i)=>{button.disabled=true;if(i===event.correct)button.classList.add("decision-correct");else if(i===choice)button.classList.add("decision-wrong")});
+ const feedback=$("decision-feedback");
+ if(feedback)feedback.textContent=(correct?"✓ Buena decisión. ":"✕ Esa decisión puede generar problemas. ")+event.explain;
+ const next=document.createElement("button");next.className="primary";next.textContent=index===operationDecisions.length-1?"CERRAR INFORME →":"SIGUIENTE SITUACIÓN →";
+ next.onclick=()=>{p.decisionIndex=index+1;if(p.decisionIndex>=operationDecisions.length)completeOperation();else{save();showDecisionStep()}};
+ $("operation-content").appendChild(next);
 }
 function completeOperation(){
  if(!state.operationProgress||state.operations.some(o=>o.id==="first-destination"))return;
- const attempts=state.operationProgress.attempts||0;
- const xp=attempts===0?40:attempts<=2?32:25;
- const grade=attempts===0?"DESTACADA":attempts<=2?"SATISFACTORIA":"COMPLETADA";
- const score=Math.max(1,9-attempts);
- state.operations.push({id:"first-destination",name:"PRIMER DESTINO",grade,xp,date:campaignDate(),score});
+ const progress=state.operationProgress;
+ const attempts=progress.attempts||0,decisionScore=progress.decisionScore||0,errors=progress.decisionErrors||0;
+ const score=Math.round(decisionScore);
+ const xp=score>=99&&attempts===0?65:score>=66?52:score>=33?40:30;
+ const grade=score>=99&&attempts===0?"DESTACADA":score>=66?"SATISFACTORIA":score>=33?"EN DESARROLLO":"COMPLETADA";
+ state.operations.push({id:"first-destination",name:"PRIMER DESTINO",grade,xp,date:campaignDate(),score,decisionErrors:errors,allocationAttempts:attempts});
  state.operationProgress=null;
  award("Operación: Primer destino",xp,"Coordinación");
  $("operation-status").textContent="MISIÓN COMPLETADA · "+grade;
- $("operation-summary").textContent="Los suministros quedaron distribuidos correctamente. El informe de asistencia fue registrado.";
- $("operation-content").innerHTML=`<div class="operation-result"><span>RESULTADO FINAL</span><strong>${grade}</strong><b>+${xp} XP</b><p>Distribución correcta · ${attempts} intentos fallidos.</p><p>${state.team.map(id=>candidates.find(c=>c.id===id)?.name).filter(Boolean).join(" · ")} completaron la misión con vos.</p></div><button class="secondary" id="return-operations">VOLVER AL CENTRO DE MANDO</button>`;
+ $("operation-summary").textContent="La distribución y las decisiones de coordinación fueron registradas en el informe final.";
+ $("operation-content").innerHTML=`<div class="operation-result"><span>RESULTADO FINAL</span><strong>${grade}</strong><b>+${xp} XP</b><p>Distribución correcta · ${attempts} intentos de ajuste.</p><p>Criterio operativo: ${score}/100 · Decisiones incorrectas: ${errors}.</p><p>${state.team.map(id=>candidates.find(c=>c.id===id)?.name).filter(Boolean).join(" · ")} completaron la misión con vos.</p></div><button class="secondary" id="return-operations">VOLVER AL CENTRO DE MANDO</button>`;
  $("return-operations").onclick=()=>showPage("inicio");renderOperations();
 }
 
 
+// Revalidar cualquier partida anterior contra las necesidades reales y el inventario.
+if(state.operationProgress?.mission==="first-destination"){
+ const p=state.operationProgress;
+ if(p.stage==="allocation"){
+  const clean=emptyAllocations();
+  for(const place of supplyMission.places)for(const resource of Object.keys(place.need)){
+   const raw=Number(p.allocations?.[place.id]?.[resource])||0;
+   clean[place.id][resource]=Math.max(0,Math.min(place.need[resource],Math.floor(raw)));
+  }
+  for(const resource of Object.keys(supplyMission.resources)){
+   let used=0;
+   for(const place of supplyMission.places){const value=clean[place.id][resource];if(used+value>supplyMission.resources[resource])clean[place.id][resource]=Math.max(0,supplyMission.resources[resource]-used);used+=clean[place.id][resource];}
+  }
+  p.allocations=clean;p.attempts=Number.isInteger(p.attempts)&&p.attempts>=0?p.attempts:0;
+ }else if(p.stage==="decisions"){
+  p.decisionIndex=Math.max(0,Math.min(operationDecisions.length-1,Number(p.decisionIndex)||0));
+  p.decisionScore=Math.max(0,Math.min(100,Number(p.decisionScore)||0));
+  p.decisionErrors=Math.max(0,Number(p.decisionErrors)||0);
+  p.decisions=Array.isArray(p.decisions)?p.decisions.filter(Number.isInteger):[];
+ }else state.operationProgress=null;
+}
 function enterGame(){ $("lobby").hidden=true;$("game-app").hidden=false;showPage(state.teamConfirmed?"inicio":"equipo");window.scrollTo({top:0,behavior:"smooth"}); }
 $("new-game").addEventListener("click",()=>{if(localStorage.getItem("recluta-save")&&!confirm("¿Empezar una partida nueva? El progreso local actual se reemplazará."))return;state={xp:0,level:1,completed:0,skills:{Disciplina:1,Resistencia:1,Inteligencia:1,Coordinación:1,Liderazgo:1},history:[],team:[],teamConfirmed:false,campaignMonth:0,campaignLog:[],operations:[],operationProgress:null};selectedTeam=[];save();enterGame()});
 $("continue-game").addEventListener("click",enterGame);
