@@ -203,3 +203,18 @@
 #entrenamiento .feedback{padding:14px;background:#111a13;border-left:3px solid #c4d49a}
 @media(max-width:700px){#entrenamiento .difficulty-tabs{grid-template-columns:repeat(2,minmax(0,1fr))}#entrenamiento .training-grid{grid-template-columns:1fr}#entrenamiento .training-card{min-height:185px}}
 @media(max-width:480px){#entrenamiento .training-hero{padding:19px 16px}.training-stamp{width:68px;height:68px}.training-stamp b{font-size:32px}.training-stamp span{font-size:6px}#entrenamiento .training-card{padding:19px 15px 18px 72px}#entrenamiento .training-icon{left:15px;top:20px;width:42px;height:42px}#entrenamiento .exercise{padding:18px 14px}.exercise-heading{padding-right:0}.exercise-reward{position:static;display:inline-block;margin-top:10px}.supply-equation{gap:5px}.supply-equation span{padding:10px 4px;font-size:8px}.supply-equation b{font-size:21px}}
+
+
+/* RECLUTA · campo de entrenamiento: jerarquía visual y lectura */
+#entrenamiento .training-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:14px}
+#entrenamiento .training-card{min-height:225px;padding:22px 20px 20px 78px;background:linear-gradient(145deg,#263327 0%,#182119 72%);border:1px solid #465840;border-left:3px solid #899b68;box-shadow:0 8px 20px #0002}
+#entrenamiento .training-card:before{content:"DISCIPLINA";position:absolute;right:13px;top:13px;font-size:7px;letter-spacing:1.2px;color:#83947a}
+#entrenamiento .training-card .eyebrow{color:#c2d29a}
+#entrenamiento .training-card p{min-height:48px;font-size:12px;line-height:1.65}
+#entrenamiento .training-card .secondary{width:100%;text-align:center}
+#entrenamiento .difficulty-info{border-left:3px solid #aebf85}
+#entrenamiento .exercise{box-shadow:0 12px 28px #0003}
+#entrenamiento .choice{display:block;width:100%;text-align:left;margin:8px 0;min-height:48px}
+#entrenamiento .choice:focus-visible,#entrenamiento .symbol-cell:focus-visible{outline:2px solid #e0e9bd;outline-offset:3px}
+@media(max-width:1050px){#entrenamiento .training-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){#entrenamiento .training-grid{grid-template-columns:1fr}}
