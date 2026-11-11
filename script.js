@@ -139,10 +139,10 @@ function renderOperations(){
  $("begin-operation").textContent=done?"OPERACIÓN COMPLETADA":state.operationProgress?"CONTINUAR OPERACIÓN →":"INICIAR OPERACIÓN →";
  $("begin-operation").disabled=done||!state.teamConfirmed;
  $("begin-operation").onclick=beginOperation;
- renderRouteOperation();
  $("operation-status").textContent=done?"Operación completada":state.operationProgress?"Operación en curso":"Esperando asignación";
  $("operation-summary").textContent=done?"La primera misión ya figura en tu expediente.":state.operationProgress?"Tu distribución quedó guardada. Podés continuar desde donde la dejaste.":"Prepará al equipo y organizá los suministros para tres puntos de asistencia.";
  if(state.operationProgress&&!done)showOperationStep();
+ renderRouteOperation();
 }
 function beginOperation(){
  if(!state.teamConfirmed){showPage("equipo");return}
