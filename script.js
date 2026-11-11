@@ -51,11 +51,45 @@ document.querySelectorAll("[data-difficulty-card]").forEach(card=>card.hidden=ca
 function startTest(type){
  if(!state.teamConfirmed){showPage("equipo");return}
  const box=$("exercise");box.scrollIntoView({behavior:"smooth",block:"start"});
- if(type==="memory"){const symbols=["▲","●","◆","■"];const sequence=Array.from({length:3},()=>symbols[Math.floor(Math.random()*symbols.length)]);box.innerHTML=`<span class="eyebrow">PRUEBA 01 · MEMORIA</span><h3>Memorizá la secuencia</h3><p>Observá los símbolos durante unos segundos.</p><h2 id="sequence" style="font-size:36px;letter-spacing:12px;color:var(--bright)">${sequence.join(" ")}</h2><button class="secondary" id="ready">YA LA VI</button>`;$("ready").onclick=()=>{$("sequence").textContent="? ? ?";$("ready").remove();const correct=sequence.join(" ");const alt1=[...sequence],alt2=[...sequence];alt1[0]=symbols.find(s=>s!==alt1[0]);alt2[2]=symbols.find(s=>s!==alt2[2]);let options=[correct,alt1.join(" "),alt2.join(" ")].sort(()=>Math.random()-.5);options.forEach(v=>{let btn=document.createElement("button");btn.className="choice";btn.textContent=v;btn.onclick=()=>finish(box,v===sequence.join(" "),"Memoria","Inteligencia");box.appendChild(btn)})}}
- if(type==="logistics"){const a=12+Math.floor(Math.random()*15),b=5+Math.floor(Math.random()*10),correct=a+b;box.innerHTML=`<span class="eyebrow">PRUEBA 02 · LOGÍSTICA</span><h3>Control de suministros</h3><p>El depósito recibe ${a} cajas y luego ${b} más. ¿Cuántas cajas hay en total?</p>`;[correct,correct+3,correct-2].sort(()=>Math.random()-.5).forEach(n=>addChoice(box,n,()=>finish(box,n===correct,"Logística","Disciplina")))}
- if(type==="logic"){const n=2+Math.floor(Math.random()*8),correct=n*4;box.innerHTML=`<span class="eyebrow">PRUEBA 03 · INTELIGENCIA</span><h3>Desafío lógico</h3><p>Completá la secuencia: ${n}, ${n*2}, ${n*3}, ¿qué número sigue?</p>`;[correct,correct+1,correct+4].sort(()=>Math.random()-.5).forEach(v=>addChoice(box,v,()=>finish(box,v===correct,"Desafío lógico","Inteligencia")))}
- if(type==="coordination"){const symbols=["▲","●","◆","■"],target=symbols[Math.floor(Math.random()*symbols.length)],choices=[target,...symbols.filter(x=>x!==target).slice(0,2)].sort(()=>Math.random()-.5);box.innerHTML=`<span class="eyebrow">PRUEBA 04 · COORDINACIÓN</span><h3>Atención visual</h3><p>Identificá el símbolo que aparece como objetivo:</p><h2 style="font-size:42px;color:var(--bright)">${target}</h2>`;choices.forEach(v=>addChoice(box,v,()=>finish(box,v===target,"Atención visual","Coordinación")))}
- if(type==="leadership"){box.innerHTML='<span class="eyebrow">PRUEBA 05 · LIDERAZGO</span><h3>Decisión de equipo</h3><p>Un equipo tiene tres tareas importantes y poco tiempo. ¿Qué decisión ayuda a organizarse mejor?</p>';[['Repartir las tareas según las capacidades y escuchar al equipo.',true],['Que una sola persona haga todo sin consultar.',false],['Dejar las tareas para el último momento.',false]].sort(()=>Math.random()-.5).forEach(([v,ok])=>addChoice(box,v,()=>finish(box,ok,"Decisión de equipo","Liderazgo")))}
+ const level={easy:0,normal:1,hard:2,special:3}[selectedDifficulty]??0;
+ const xp=[15,20,25,30][level];
+ const heading=(tag,title,desc)=>{box.innerHTML=`<div class="exercise-heading"><span class="eyebrow">EVALUACIÓN · ${tag} · ${selectedDifficulty.toUpperCase()}</span><h3>${title}</h3><p>${desc}</p><span class="exercise-reward">+ ${xp} XP</span></div><div class="exercise-task" id="exercise-task"></div>`;return $("exercise-task")};
+ const choices=(task,items,correct,name,skill)=>items.forEach(v=>addChoice(task,v,()=>finish(box,v===correct,name,skill)));
+ if(type==="memory"){
+  const symbols=["▲","●","◆","■","★","⬟"],length=[4,6,8,10][level],sequence=Array.from({length},()=>symbols[Math.floor(Math.random()*symbols.length)]);
+  const task=heading("MEMORIA","Retención de secuencia",`Memorizá ${length} símbolos. La secuencia se ocultará automáticamente.`);
+  task.innerHTML=`<div class="memory-sequence" id="sequence">${sequence.join("　")}</div><p class="muted">Prepará tu respuesta antes de que termine el tiempo.</p><button class="primary" id="ready">OCULTAR Y RESPONDER</button>`;
+  const hide=()=>{$("sequence").textContent="SECUENCIA OCULTA";$("ready").remove();const correct=sequence.join(" ");const options=[correct];for(let k=0;k<3;k++){let alt=[...sequence];const pos=(k*2+level)%length;alt[pos]=symbols.find(x=>x!==alt[pos]);options.push(alt.join(" "))}options.sort(()=>Math.random()-.5).forEach(v=>addChoice(task,v,v===correct?"correct":null,"Memoria","Inteligencia"))};
+  $("ready").onclick=hide;if(level>0)setTimeout(()=>{if($("ready"))hide()},Math.max(1800,5200-level*900));
+ }
+ if(type==="logistics"){
+  const start=level===0?24:level===1?86:level===2?145:275,boxes=start+Math.floor(Math.random()*30),reserve=level===0?8:level===1?17:level===2?26:43,damaged=level===0?2:level===1?5:level===2?9:14,needed=boxes+reserve-damaged;
+  const task=heading("LOGÍSTICA","Balance de suministros","Calculá el total disponible después de sumar la reserva y descontar el material dañado.");
+  task.innerHTML=`<div class="supply-equation"><span>DEPÓSITO <b>${boxes}</b></span><span>RESERVA <b>+${reserve}</b></span><span>DAÑADO <b>−${damaged}</b></span></div><p>¿Cuántas unidades utilizables quedan?</p>`;
+  const vals=[needed,needed+damaged,needed-reserve,needed+(level+1)*7].sort(()=>Math.random()-.5);choices(task,vals,needed,"Balance logístico","Disciplina");
+ }
+ if(type==="logic"){
+  const n=level===0?3:level===1?5:level===2?7:9,seq=level===0?[n,n+3,n+6,n+9]:level===1?[n,n*2,n*4,n*8]:level===2?[n,n+2,n+6,n+12]:[n,n*2+1,n*4+3,n*8+7],answer=level===0?seq[3]+3:level===1?seq[3]*2:level===2?seq[3]+8:seq[3]*2+15;
+  const task=heading("RAZONAMIENTO","Patrón de progresión","Identificá la regla que conecta todos los términos y elegí el siguiente valor.");
+  task.innerHTML=`<div class="logic-sequence">${seq.join("<span> / </span>")}<b>?</b></div><p>¿Qué número continúa la secuencia?</p>`;
+  choices(task,[answer,answer+2,answer-3,answer+Math.max(5,n)].sort(()=>Math.random()-.5),answer,"Razonamiento lógico","Inteligencia");
+ }
+ if(type==="coordination"){
+  const symbols=["▲","●","◆","■"],target=symbols[Math.floor(Math.random()*4)],count=[9,16,25,36][level],items=Array.from({length:count},(_,i)=>i%[3,4,5,6][level]===0?target:symbols[(symbols.indexOf(target)+1+(i%3))%4]);
+  const task=heading("ATENCIÓN","Detección de patrones","Encontrá el símbolo objetivo entre los distractores. La ubicación cambia en cada intento.");
+  task.innerHTML=`<p class="target-symbol">OBJETIVO: <b>${target}</b></p><div class="symbol-grid" style="--symbol-cols:${[3,4,5,6][level]}">${items.map((v,i)=>`<button class="symbol-cell" data-symbol-index="${i}">${v}</button>`).join("")}</div>`;
+  task.querySelectorAll("[data-symbol-index]").forEach((el,i)=>el.onclick=()=>finish(box,items[i]===target,"Atención visual","Coordinación"));
+ }
+ if(type==="leadership"){
+  const cases=[
+   {q:"Dos tareas urgentes compiten por el mismo recurso. ¿Qué hacés primero?",opts:["Comparo impacto y plazo, consulto al equipo y explico la prioridad.","Asigno el recurso a la tarea más sencilla para terminar rápido.","Decido sin compartir el criterio para evitar discusiones.","Espero a que otro integrante resuelva el conflicto."],ok:0},
+   {q:"Un informe importante contiene un dato que contradice dos registros anteriores.",opts:["Verifico el origen, documento la discrepancia y solicito confirmación.","Reemplazo los registros anteriores por el informe nuevo.","Ignoro el dato para no retrasar el trabajo.","Promedio los valores aunque midan cosas distintas."],ok:0},
+   {q:"Un integrante cumple su tarea, pero el resto del equipo queda retrasado.",opts:["Reviso el cuello de botella y redistribuyo tareas sin perder responsabilidades.","Le asigno todas las tareas pendientes al mismo integrante.","Mantengo el reparto aunque ya no funcione.","Cancelo el trabajo del equipo sin revisar alternativas."],ok:0},
+   {q:"La información disponible no alcanza para tomar una decisión segura.",opts:["Identifico qué falta, pido datos y comunico qué decisión puede esperar.","Completo los datos con una suposición razonable.","Elijo la opción más rápida y no registro la incertidumbre.","Transfiero toda la responsabilidad a otra persona."],ok:0}
+  ][level];
+  const task=heading("LIDERAZGO","Evaluación de criterio",cases.q);
+  choices(task,cases.opts,cases.opts[cases.ok],"Criterio de liderazgo","Liderazgo");
+ }
 }
 function addChoice(box,value,fn){let b=document.createElement("button");b.className="choice";b.textContent=value;b.onclick=fn;box.appendChild(b)}
 function finish(box,correct,name,skill){box.querySelectorAll("button").forEach(b=>b.disabled=true);if(correct){const gained=({easy:15,normal:20,hard:25,special:30})[selectedDifficulty]||15;award(name,gained,skill);box.insertAdjacentHTML("beforeend",`<p class="feedback">✓ PRUEBA SUPERADA · +${gained} XP</p>`)}else{box.insertAdjacentHTML("beforeend",'<p class="feedback">Prueba no superada. Podés intentarlo nuevamente.</p>')}let again=document.createElement("button");again.className="secondary";again.textContent="VOLVER A ENTRENAMIENTO";again.onclick=()=>{box.innerHTML='<span class="eyebrow">SALA DE PRUEBAS</span><h3>Seleccioná una actividad</h3><p class="muted">Tus resultados se registrarán en tu expediente.</p>'};box.appendChild(again)}
