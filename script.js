@@ -1,6 +1,22 @@
 const defaultState={xp:0,level:1,completed:0,skills:{Disciplina:1,Resistencia:1,Inteligencia:1,Coordinación:1,Liderazgo:1},history:[],team:[],teamConfirmed:false,campaignMonth:0,campaignLog:[],operations:[],operationProgress:null};
 let state;
-try{state={...defaultState,...JSON.parse(localStorage.getItem("recluta-save")||"{}")};state.skills={...defaultState.skills,...(state.skills||{})};state.history=state.history||[];state.team=Array.isArray(state.team)?state.team:[];state.campaignMonth=Number.isInteger(state.campaignMonth)&&state.campaignMonth>=0?state.campaignMonth:0;state.campaignLog=Array.isArray(state.campaignLog)?state.campaignLog:[];state.operations=Array.isArray(state.operations)?state.operations:[];state.operationProgress=state.operationProgress&&typeof state.operationProgress==="object"&&Number.isInteger(state.operationProgress.step)&&state.operationProgress.step>=0&&state.operationProgress.step<=2&&Number.isFinite(state.operationProgress.score)&&state.operationProgress.score>=0&&state.operationProgress.score<=6&&(state.operationProgress.answer===null||Number.isInteger(state.operationProgress.answer)&&state.operationProgress.answer>=0&&state.operationProgress.answer<=2)?state.operationProgress:null;}catch{state={...defaultState}}
+try{
+ state={...defaultState,...JSON.parse(localStorage.getItem("recluta-save")||"{}")};
+ state.skills={...defaultState.skills,...(state.skills||{})};
+ state.history=Array.isArray(state.history)?state.history:[];
+ state.team=Array.isArray(state.team)?state.team:[];
+ state.campaignMonth=Number.isInteger(state.campaignMonth)&&state.campaignMonth>=0?state.campaignMonth:0;
+ state.campaignLog=Array.isArray(state.campaignLog)?state.campaignLog:[];
+ state.operations=Array.isArray(state.operations)?state.operations:[];
+ const p=state.operationProgress;
+ if(p&&p.mission==="first-destination"&&p.stage==="allocation"&&p.allocations&&typeof p.allocations==="object"){
+  const clean={};for(const place of ["norte","sur","escuela"]){clean[place]={};for(const item of ["agua","alimentos","medicina"]){const v=p.allocations[place]?.[item];clean[place][item]=Number.isInteger(v)&&v>=0&&v<=8?v:0;}}
+  state.operationProgress={mission:"first-destination",stage:"allocation",allocations:clean,attempts:Number.isInteger(p.attempts)&&p.attempts>=0?p.attempts:0};
+ }else if(p&&Number.isInteger(p.step)&&p.step>=0&&p.step<=2){
+  state.operationProgress={mission:"first-destination",stage:"allocation",allocations:{norte:{agua:0,alimentos:0,medicina:0},sur:{agua:0,alimentos:0,medicina:0},escuela:{agua:0,alimentos:0,medicina:0}},attempts:0};
+ }else state.operationProgress=null;
+}catch{state={...defaultState};}
+
 const ranks=["Recluta","Soldado","Cabo","Sargento","Teniente","Capitán","Mayor","Coronel","General"];
 const candidates=[
 {id:"martin",name:"Martín Sosa",age:21,role:"Logística",trait:"Organizado · responsable · detallista",strength:"Planificación y control de suministros",weakness:"A veces piensa demasiado antes de actuar.",skill:"PLAN B",bio:"Ayudaba en el negocio familiar y aprendió a resolver problemas con recursos limitados.",quote:"«Si tenemos un plan, también tenemos que tener una alternativa.»",bonus:"Mejor criterio en desafíos de organización."},
@@ -107,21 +123,16 @@ function finish(box,correct,name,skill,gained){box.querySelectorAll("button").fo
 
 
 
-const operationSteps=[
-{title:"1 · ORGANIZAR LA ASISTENCIA",text:"Llegan suministros para varias localidades. ¿Cómo organizás el trabajo?",choices:[
-{label:"Distribuir tareas según las capacidades y revisar prioridades con el equipo.",score:2,feedback:"El equipo se organiza y cada persona sabe qué hacer."},
-{label:"Repartir todo rápidamente sin comprobar las necesidades.",score:0,feedback:"La distribución avanza, pero algunos recursos podrían no ser los adecuados."},
-{label:"Esperar instrucciones para cada detalle.",score:1,feedback:"Se evitan errores, aunque se pierde tiempo de coordinación."}]},
-{title:"2 · INFORMACIÓN INCOMPLETA",text:"Dos informes tienen datos diferentes sobre las necesidades de una localidad. ¿Qué hacés?",choices:[
-{label:"Comparar las fuentes y pedir confirmación antes de actualizar el registro.",score:2,feedback:"La información queda verificada y el equipo evita confusiones."},
-{label:"Elegir el primer informe recibido.",score:0,feedback:"La decisión es rápida, pero se basa en datos no confirmados."},
-{label:"Compartir ambos informes como si fueran definitivos.",score:1,feedback:"El equipo conoce la diferencia, aunque todavía falta verificarla."}]},
-{title:"3 · CIERRE DE LA MISIÓN",text:"Una compañera está sobrecargada y queda una tarea de registro pendiente. ¿Cómo resolvés la situación?",choices:[
-{label:"Redistribuir la tarea y consultar si alguien necesita apoyo.",score:2,feedback:"El equipo termina coordinado y con responsabilidades equilibradas."},
-{label:"Pedirle que termine todo por su cuenta.",score:0,feedback:"La tarea se completa, pero el equipo queda desbalanceado."},
-{label:"Dejar el registro para otro día sin avisar.",score:0,feedback:"Queda información importante sin documentar."}]}
-];
-let operationChoice=0,operationScore=0;
+const supplyMission={
+ resources:{agua:8,alimentos:7,medicina:5},
+ places:[
+  {id:"norte",name:"Barrio Norte",need:{agua:3,alimentos:2,medicina:1},note:"Familias que necesitan agua potable y alimentos"},
+  {id:"sur",name:"Villa Sur",need:{agua:2,alimentos:3,medicina:2},note:"Centro vecinal con mayor demanda de alimentos"},
+  {id:"escuela",name:"Escuela Rural",need:{agua:3,alimentos:2,medicina:2},note:"Punto de asistencia para estudiantes y personal"}
+ ],
+ labels:{agua:"Agua",alimentos:"Alimentos",medicina:"Botiquines"}
+};
+function emptyAllocations(){return {norte:{agua:0,alimentos:0,medicina:0},sur:{agua:0,alimentos:0,medicina:0},escuela:{agua:0,alimentos:0,medicina:0}}}
 function renderOperations(){
  $("operation-history").innerHTML=state.operations.length?state.operations.slice().reverse().map(o=>`<p>✓ ${o.name} · ${o.grade} · +${o.xp} XP <span class="muted">· ${o.date}</span></p>`).join(""):"Todavía no completaste ninguna operación.";
  const done=state.operations.some(o=>o.id==="first-destination");
@@ -129,56 +140,63 @@ function renderOperations(){
  $("begin-operation").disabled=done||!state.teamConfirmed;
  $("begin-operation").onclick=beginOperation;
  $("operation-status").textContent=done?"Operación completada":state.operationProgress?"Operación en curso":"Esperando asignación";
- $("operation-summary").textContent=done?"La primera misión ya figura en tu expediente.":state.operationProgress?"Tu avance está guardado. Podés continuar desde la última etapa.":"Revisá el informe y prepará a tu equipo.";
+ $("operation-summary").textContent=done?"La primera misión ya figura en tu expediente.":state.operationProgress?"Tu distribución quedó guardada. Podés continuar desde donde la dejaste.":"Prepará al equipo y organizá los suministros para tres puntos de asistencia.";
  if(state.operationProgress&&!done)showOperationStep();
 }
 function beginOperation(){
  if(!state.teamConfirmed){showPage("equipo");return}
  if(state.operations.some(o=>o.id==="first-destination"))return;
- if(!state.operationProgress)state.operationProgress={step:0,score:0,answer:null};
+ if(!state.operationProgress)state.operationProgress={mission:"first-destination",stage:"allocation",allocations:emptyAllocations(),attempts:0};
  showOperationStep();
+}
+function changeAllocation(place,resource,delta){
+ const p=state.operationProgress;if(!p||p.stage!=="allocation")return;
+ const current=p.allocations[place][resource];
+ const used=Object.values(p.allocations).reduce((sum,row)=>sum+row[resource],0);
+ const next=current+delta;
+ if(next<0||used+delta>supplyMission.resources[resource])return;
+ p.allocations[place][resource]=next;save();showOperationStep();
 }
 function showOperationStep(){
- const progress=state.operationProgress;
- if(!progress)return;
- const step=operationSteps[progress.step];
- if(!step){completeOperation();return}
- $("operation-status").textContent="Operación en curso · Etapa "+(progress.step+1)+"/3";
- $("operation-summary").textContent="Equipo asignado: "+state.team.map(id=>candidates.find(c=>c.id===id)?.name).join(", ");
- $("operation-content").innerHTML=`<div class="operation-progress"><span style="width:${(progress.step/3)*100}%"></span></div><h3>${step.title}</h3><p>${step.text}</p><div class="operation-choices">${step.choices.map((c,i)=>`<button class="operation-choice" data-operation-choice="${i}" ${progress.answer===i?"disabled":""}>${c.label}</button>`).join("")}</div><p class="operation-feedback" id="operation-feedback">${progress.answer===null?"":step.choices[progress.answer].feedback}</p>`;
- document.querySelectorAll("[data-operation-choice]").forEach(b=>b.onclick=()=>chooseOperation(Number(b.dataset.operationChoice)));
- if(progress.answer!==null){
-  const next=document.createElement("button");next.className="primary";next.textContent=progress.step===2?"FINALIZAR OPERACIÓN →":"CONTINUAR →";next.onclick=continueOperation;$("operation-content").appendChild(next);
- }
+ const p=state.operationProgress;if(!p)return;
+ const totals={agua:0,alimentos:0,medicina:0};
+ for(const row of Object.values(p.allocations))for(const key of Object.keys(totals))totals[key]+=row[key]||0;
+ const resourcesLeft=Object.fromEntries(Object.keys(totals).map(k=>[k,supplyMission.resources[k]-totals[k]]));
+ const places=supplyMission.places.map(place=>{
+  const cells=Object.keys(totals).map(resource=>{
+   const value=p.allocations[place.id][resource]||0,need=place.need[resource];
+   return `<div class="dispatch-cell"><span>${supplyMission.labels[resource]} <b>${value}/${need}</b></span><div class="dispatch-controls"><button type="button" data-adjust="-1" data-place="${place.id}" data-resource="${resource}" aria-label="Quitar ${supplyMission.labels[resource]}">−</button><strong>${value}</strong><button type="button" data-adjust="1" data-place="${place.id}" data-resource="${resource}" aria-label="Agregar ${supplyMission.labels[resource]}">+</button></div></div>`;
+  }).join("");
+  return `<article class="dispatch-location"><div class="dispatch-location-head"><span class="dispatch-pin">◎</span><div><h4>${place.name}</h4><p>${place.note}</p></div></div><div class="dispatch-resource-grid">${cells}</div></article>`;
+ }).join("");
+ const exact=supplyMission.places.every(place=>Object.keys(totals).every(resource=>p.allocations[place.id][resource]===place.need[resource]));
+ $("operation-status").textContent="OPERACIÓN EN CURSO · DISTRIBUCIÓN";
+ $("operation-summary").textContent="Equipo: "+state.team.map(id=>candidates.find(c=>c.id===id)?.name).filter(Boolean).join(", ")+". Asigná cada recurso según las necesidades de cada punto.";
+ $("operation-content").innerHTML=`<div class="dispatch-hud"><div><span>ETAPA</span><b>01 / 02</b></div><div><span>INTENTOS</span><b>${p.attempts}</b></div><div><span>ESTADO</span><b>${exact?"LISTO PARA VALIDAR":"EN PREPARACIÓN"}</b></div></div><div class="operation-progress"><span style="width:50%"></span></div><div class="dispatch-intro"><span class="eyebrow">TABLERO LOGÍSTICO</span><h3>Distribuí los suministros</h3><p>Tenés un inventario limitado. Usá + y − para asignar cada recurso a los tres puntos. Las cantidades deben coincidir con las necesidades indicadas.</p></div><div class="dispatch-inventory">${Object.keys(totals).map(k=>`<div><span>${supplyMission.labels[k]}</span><b>${resourcesLeft[k]} / ${supplyMission.resources[k]}</b><small>disponibles</small></div>`).join("")}</div><div class="dispatch-map" aria-label="Puntos de asistencia"><div class="dispatch-route"></div><span class="dispatch-map-label">ZONA DE ASISTENCIA · SECTOR 01</span>${places}</div><div class="dispatch-actions"><button class="secondary" id="reset-dispatch">REINICIAR DISTRIBUCIÓN</button><button class="primary" id="validate-dispatch">VERIFICAR DISTRIBUCIÓN →</button></div><p class="operation-feedback" id="dispatch-feedback" aria-live="polite">${p.attempts?"Revisá los requerimientos y volvé a intentarlo.":"No hay penalización por probar distintas distribuciones."}</p>`;
+ document.querySelectorAll("[data-adjust]").forEach(b=>b.onclick=()=>changeAllocation(b.dataset.place,b.dataset.resource,Number(b.dataset.adjust)));
+ $("reset-dispatch").onclick=()=>{p.allocations=emptyAllocations();save();showOperationStep()};
+ $("validate-dispatch").onclick=validateDispatch;
 }
-function chooseOperation(index){
- const progress=state.operationProgress;
- if(!progress||progress.answer!==null||!Number.isInteger(index)||!operationSteps[progress.step]?.choices[index])return;
- progress.answer=index;
- progress.score+=operationSteps[progress.step].choices[index].score;
- save();
- showOperationStep();
-}
-function continueOperation(){
- if(!state.operationProgress||state.operationProgress.answer===null)return;
- if(state.operationProgress.step===2){completeOperation();return}
- state.operationProgress.step++;
- state.operationProgress.answer=null;
- save();
- showOperationStep();
+function validateDispatch(){
+ const p=state.operationProgress;if(!p)return;
+ const misses=[];
+ supplyMission.places.forEach(place=>Object.keys(place.need).forEach(resource=>{if(p.allocations[place.id][resource]!==place.need[resource])misses.push({place:place.name,resource:supplyMission.labels[resource]})}));
+ if(misses.length){p.attempts++;save();showOperationStep();$("dispatch-feedback").textContent="Todavía hay "+misses.length+" asignaciones incorrectas. Revisá las cantidades de cada localidad y probá de nuevo.";return}
+ completeOperation();
 }
 function completeOperation(){
  if(!state.operationProgress||state.operations.some(o=>o.id==="first-destination"))return;
- const score=state.operationProgress.score;
- const xp=score>=5?30:score>=3?20:15;
- const grade=score>=5?"DESTACADA":score>=3?"SATISFACTORIA":"CON OBSERVACIONES";
+ const attempts=state.operationProgress.attempts||0;
+ const xp=attempts===0?40:attempts<=2?32:25;
+ const grade=attempts===0?"DESTACADA":attempts<=2?"SATISFACTORIA":"COMPLETADA";
+ const score=Math.max(1,9-attempts);
  state.operations.push({id:"first-destination",name:"PRIMER DESTINO",grade,xp,date:campaignDate(),score});
  state.operationProgress=null;
- award("Operación: Primer destino",xp,"Liderazgo");
+ award("Operación: Primer destino",xp,"Coordinación");
  $("operation-status").textContent="MISIÓN COMPLETADA · "+grade;
- $("operation-summary").textContent="La asistencia quedó organizada y el informe fue entregado. El desempeño de tu equipo quedó registrado.";
- $("operation-content").innerHTML=`<div class="operation-result"><span>RESULTADO FINAL</span><strong>${grade}</strong><b>+${xp} XP</b><p>${score}/6 puntos de coordinación.</p><p>${state.team.map(id=>candidates.find(c=>c.id===id)?.name).join(" · ")} completaron su primera misión con vos.</p></div><button class="secondary" id="return-operations">VOLVER AL CENTRO DE OPERACIONES</button>`;
- $("return-operations").textContent="VOLVER AL CENTRO DE MANDO";$("return-operations").onclick=()=>showPage("inicio");renderOperations();
+ $("operation-summary").textContent="Los suministros quedaron distribuidos correctamente. El informe de asistencia fue registrado.";
+ $("operation-content").innerHTML=`<div class="operation-result"><span>RESULTADO FINAL</span><strong>${grade}</strong><b>+${xp} XP</b><p>Distribución correcta · ${attempts} intentos fallidos.</p><p>${state.team.map(id=>candidates.find(c=>c.id===id)?.name).filter(Boolean).join(" · ")} completaron la misión con vos.</p></div><button class="secondary" id="return-operations">VOLVER AL CENTRO DE MANDO</button>`;
+ $("return-operations").onclick=()=>showPage("inicio");renderOperations();
 }
 
 
