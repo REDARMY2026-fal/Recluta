@@ -288,20 +288,27 @@ function routeCellKey(x,y){return x+","+y}
 function routeBlocked(key,p){return routeMap.walls.includes(key)||(p.dynamicWalls||[]).includes(key)}
 function moveRoute(dx,dy){
  const p=state.routeProgress;if(!p||p.finished||p.failed||p.moves>=24)return;
+ if(p.pressure==null)p.pressure=Math.min(99,p.moves*4+(p.moves>=7?10:0)+(p.moves>=16?10:0));
  if(!Number.isInteger(dx)||!Number.isInteger(dy)||Math.abs(dx)+Math.abs(dy)!==1)return;
  const x=p.x+dx,y=p.y+dy,key=routeCellKey(x,y);
  if(x<0||y<0||x>=5||y>=5||routeBlocked(key,p))return;
- p.x=x;p.y=y;p.moves++;
+ p.x=x;p.y=y;p.moves++;p.pressure=Math.min(100,p.pressure+4);
  const supply=routeMap.supplies.find(item=>item.x===x&&item.y===y&&!p.collected.includes(item.id));
  if(supply){p.collected.push(supply.id);p.log.unshift("Caja recogida: "+supply.kind+".")}
  const destination=routeMap.destinations.find(item=>item.x===x&&item.y===y&&!p.delivered.includes(item.id));
  if(destination){if(p.collected.includes(destination.needs)){p.delivered.push(destination.id);p.log.unshift("Entrega confirmada: "+destination.label+".")}else p.log.unshift("Llegaste a "+destination.label+", pero todavía falta su caja correspondiente.")}
  if(x===routeMap.beacon.x&&y===routeMap.beacon.y)p.log.unshift("Punto de radio localizado. Activá el informe para obtener puntos extra.");
- if(p.moves===7&&routeCellKey(p.x,p.y)!=="3,3"){p.dynamicWalls=["3,3"];p.log.unshift("ALERTA METEOROLÓGICA: el paso 4-D quedó anegado. Buscá una ruta alternativa.")}
+ if(p.moves===7){p.pressure=Math.min(100,p.pressure+10);if(routeCellKey(p.x,p.y)!=="3,3"){p.dynamicWalls=["3,3"];p.log.unshift("ALERTA METEOROLÓGICA: el paso 4-D quedó anegado. Buscá una ruta alternativa.")}else p.log.unshift("El equipo logró cruzar antes del cierre del paso.")}
+ if(p.moves===16){p.pressure=Math.min(100,p.pressure+10);p.log.unshift("SEGUNDO AVISO: aumenta la presión del operativo. Priorizá las entregas pendientes.")}
+ if(p.pressure>=100){p.failed=true;p.log.unshift("La presión llegó al límite. El equipo debe reorganizarse y reiniciar el recorrido.");p.log=p.log.slice(0,5);save();renderRoute();return}
  if(p.delivered.length===2){completeRouteOperation();return}
  if(p.moves>=24){p.failed=true;p.log.unshift("Se agotaron los movimientos disponibles. Reiniciá el recorrido y probá otra ruta.");p.log=p.log.slice(0,5);save();renderRoute();return}
- if(p.moves===16)p.log.unshift("Atención: queda poco margen para completar las entregas.");
+ if(p.pressure>=65&&p.pressure<80)p.log.unshift("La coordinación se complica: todavía podés reorganizar al equipo.");
  p.log=p.log.slice(0,5);save();renderRoute();
+}
+function reorganizeRouteTeam(){
+ const p=state.routeProgress;if(!p||p.finished||p.failed||p.teamBoostUsed||p.pressure<45)return;
+ p.teamBoostUsed=true;p.pressure=Math.max(0,p.pressure-18);p.log.unshift("El equipo hizo una pausa breve, reorganizó las tareas y recuperó coordinación. Presión -18.");p.log=p.log.slice(0,5);save();renderRoute();
 }
 function activateRouteRadio(){
  const p=state.routeProgress;if(!p||p.radioBonus||p.x!==routeMap.beacon.x||p.y!==routeMap.beacon.y)return;
@@ -309,6 +316,7 @@ function activateRouteRadio(){
 }
 function renderRoute(){
  const p=state.routeProgress;if(!p)return;
+ if(p.pressure==null)p.pressure=Math.min(99,p.moves*4+(p.moves>=7?10:0)+(p.moves>=16?10:0));
  const cells=[];
  for(let y=0;y<5;y++)for(let x=0;x<5;x++){
   const key=routeCellKey(x,y),wall=routeBlocked(key,p),supply=routeMap.supplies.find(a=>a.x===x&&a.y===y&&!p.collected.includes(a.id)),dest=routeMap.destinations.find(a=>a.x===x&&a.y===y),player=p.x===x&&p.y===y;
@@ -320,17 +328,20 @@ function renderRoute(){
  }
  $("route-operation-status").textContent="OPERACIÓN EN CURSO · RUTA DE ASISTENCIA";
  $("route-operation-summary").textContent=p.failed?"Se agotó el margen de movimientos. Reiniciá el recorrido para volver a intentarlo.":"Guiá al equipo por el mapa. Cada movimiento consume una acción. Recogé las dos cajas y llevalas a sus destinos.";
- $("route-operation-content").innerHTML=`<div class="dispatch-hud"><div><span>MOVIMIENTOS</span><b>${p.moves} / 24</b></div><div><span>CAJAS</span><b>${p.collected.length} / 2</b></div><div><span>ENTREGAS</span><b>${p.delivered.length} / 2</b></div></div><p class="route-alert">${p.moves>=7?"⚠️ Tramo anegado: adaptá el recorrido.":"Objetivo extra: encontrá el punto de radio y activalo para ganar puntos."}</p><div class="route-objectives"><div><b>${p.collected.includes("north")?"✓":"○"} Caja A · Agua</b><span>${p.delivered.includes("north")?"Entregada":"Destino: Punto Norte"}</span></div><div><b>${p.collected.includes("south")?"✓":"○"} Caja B · Botiquines</b><span>${p.delivered.includes("south")?"Entregada":"Destino: Punto Sur"}</span></div></div><div class="route-board-wrap"><div class="route-board" role="group" aria-label="Mapa de ruta de asistencia">${cells.join("")}</div><div class="route-legend"><span>R · Equipo</span><span>▣ · Caja</span><span>◎ · Entrega</span><span>▧ · Bloqueo</span><span>⌁ · Radio</span></div></div><div class="route-controls"><div class="route-pad"><button type="button" data-route-move="0,-1" ${p.failed||p.moves>=24||p.y===0||routeBlocked(routeCellKey(p.x,p.y-1),p)?"disabled":""}>↑</button><button type="button" data-route-move="-1,0" ${p.failed||p.moves>=24||p.x===0||routeBlocked(routeCellKey(p.x-1,p.y),p)?"disabled":""}>←</button><button type="button" data-route-move="0,1" ${p.failed||p.moves>=24||p.y===4||routeBlocked(routeCellKey(p.x,p.y+1),p)?"disabled":""}>↓</button><button type="button" data-route-move="1,0" ${p.failed||p.moves>=24||p.x===4||routeBlocked(routeCellKey(p.x+1,p.y),p)?"disabled":""}>→</button></div><span>También podés usar las flechas del teclado.</span></div><div class="route-log"><b>COMUNICACIONES DEL EQUIPO</b>${p.log.map(line=>`<p>▸ ${line}</p>`).join("")}</div><button class="secondary" id="restart-route">REINICIAR RECORRIDO</button>`;
+ $("route-operation-content").innerHTML=`<div class="dispatch-hud"><div><span>MOVIMIENTOS</span><b>${p.moves} / 24</b></div><div><span>CAJAS</span><b>${p.collected.length} / 2</b></div><div><span>ENTREGAS</span><b>${p.delivered.length} / 2</b></div></div><div class="route-pressure"><div class="route-pressure-heading"><b>PRESIÓN DEL OPERATIVO</b><strong>${p.pressure}%</strong></div><div class="route-pressure-track"><span style="width:${p.pressure}%"></span></div><small>${p.pressure>=80?"CRÍTICA · Queda poco margen":p.pressure>=55?"ALTA · Reorganizá al equipo si hace falta":p.pressure>=30?"EN AUMENTO · El escenario puede cambiar":"ESTABLE · Avanzá con planificación"}</small></div><p class="route-alert">${p.pressure>=80?"🚨 Presión crítica: priorizá completar las entregas.":p.moves>=7?"⚠️ El clima cambió la ruta. Buscá un camino alternativo.":"Objetivo extra: encontrá el punto de radio y activalo para ganar puntos."}</p><div class="route-objectives"><div><b>${p.collected.includes("north")?"✓":"○"} Caja A · Agua</b><span>${p.delivered.includes("north")?"Entregada":"Destino: Punto Norte"}</span></div><div><b>${p.collected.includes("south")?"✓":"○"} Caja B · Botiquines</b><span>${p.delivered.includes("south")?"Entregada":"Destino: Punto Sur"}</span></div></div><div class="route-board-wrap"><div class="route-board" role="group" aria-label="Mapa de ruta de asistencia">${cells.join("")}</div><div class="route-legend"><span>R · Equipo</span><span>▣ · Caja</span><span>◎ · Entrega</span><span>▧ · Bloqueo</span><span>⌁ · Radio</span></div></div><div class="route-controls"><div class="route-pad"><button type="button" data-route-move="0,-1" ${p.failed||p.moves>=24||p.y===0||routeBlocked(routeCellKey(p.x,p.y-1),p)?"disabled":""}>↑</button><button type="button" data-route-move="-1,0" ${p.failed||p.moves>=24||p.x===0||routeBlocked(routeCellKey(p.x-1,p.y),p)?"disabled":""}>←</button><button type="button" data-route-move="0,1" ${p.failed||p.moves>=24||p.y===4||routeBlocked(routeCellKey(p.x,p.y+1),p)?"disabled":""}>↓</button><button type="button" data-route-move="1,0" ${p.failed||p.moves>=24||p.x===4||routeBlocked(routeCellKey(p.x+1,p.y),p)?"disabled":""}>→</button></div><span>También podés usar las flechas del teclado.</span></div><div class="route-log"><b>COMUNICACIONES DEL EQUIPO</b>${p.log.map(line=>`<p>▸ ${line}</p>`).join("")}</div><button class="secondary" id="restart-route">REINICIAR RECORRIDO</button>`;
  $("route-operation-content").onclick=event=>{
   const moveButton=event.target.closest("[data-route-move]");
   const cellButton=event.target.closest("[data-route-x]");
   const restartButton=event.target.closest("#restart-route");
   const radioButton=event.target.closest("#activate-route-radio");
+  const regroupButton=event.target.closest("#reorganize-route-team");
   if(moveButton){event.preventDefault();const [dx,dy]=moveButton.dataset.routeMove.split(",").map(Number);moveRoute(dx,dy);return}
   if(cellButton){event.preventDefault();const dx=Number(cellButton.dataset.routeX)-state.routeProgress.x,dy=Number(cellButton.dataset.routeY)-state.routeProgress.y;moveRoute(dx,dy);return}
   if(restartButton){event.preventDefault();state.routeProgress={x:0,y:0,moves:0,collected:[],delivered:[],dynamicWalls:[],log:["Recorrido reiniciado desde el centro de distribución."],finished:false,radioBonus:false};save();renderRoute();return}
-  if(radioButton){event.preventDefault();activateRouteRadio()}
+  if(radioButton){event.preventDefault();activateRouteRadio();return}
+  if(regroupButton){event.preventDefault();reorganizeRouteTeam()}
  };
+ if(p.pressure>=45&&!p.teamBoostUsed&&!p.failed&&!p.finished)$("route-operation-content").insertAdjacentHTML("beforeend",'<button class="secondary route-regroup" id="reorganize-route-team">REORGANIZAR EQUIPO · -18 PRESIÓN</button>');
  if(p.x===routeMap.beacon.x&&p.y===routeMap.beacon.y&&!p.radioBonus)$("route-operation-content").insertAdjacentHTML("beforeend",'<button class="primary" id="activate-route-radio">ACTIVAR RADIO · OBJETIVO EXTRA</button>');
 }
 document.addEventListener("keydown",event=>{
@@ -341,7 +352,7 @@ document.addEventListener("keydown",event=>{
 });
 function completeRouteOperation(){
  const p=state.routeProgress;if(!p||state.operations.some(o=>o.id==="storm-route"))return;
- const score=Math.min(100,Math.max(35,100-Math.max(0,p.moves-15)*5)+(p.radioBonus?10:0)),xp=score>=90?85:score>=75?70:55;
+ const score=Math.min(100,Math.max(35,100-Math.max(0,p.moves-15)*5)+(p.radioBonus?10:0)+(p.pressure<=65?5:0)),xp=score>=90?85:score>=75?70:55;
  const grade=score>=90?"DESTACADA":score>=65?"SATISFACTORIA":"COMPLETADA";
  state.operations.push({id:"storm-route",name:"RUTA BAJO PRESIÓN",grade,xp,date:campaignDate(),score,moves:p.moves});
  p.finished=true;save();award("Operación: Ruta bajo presión",xp,"Coordinación");
