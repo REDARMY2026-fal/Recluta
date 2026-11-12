@@ -415,3 +415,12 @@ input,select,textarea{
 .route-controls .route-pad button:nth-child(2){grid-column:1;grid-row:2}
 .route-controls .route-pad button:nth-child(3){grid-column:2;grid-row:2}
 .route-controls .route-pad button:nth-child(4){grid-column:3;grid-row:2}
+
+/* Dynamic operation pressure meter */
+.route-pressure{padding:12px 14px;margin:12px 0;background:#171f19;border:1px solid #536247;border-radius:10px}
+.route-pressure-heading{display:flex;align-items:center;justify-content:space-between;gap:12px;color:#dce5cf;font-size:10px;letter-spacing:.7px}
+.route-pressure-heading strong{font-size:15px;font-variant-numeric:tabular-nums;color:#e7c47d}
+.route-pressure-track{height:9px;margin:9px 0 7px;background:#303a30;border-radius:99px;overflow:hidden}
+.route-pressure-track span{display:block;height:100%;background:linear-gradient(90deg,#87a86b 0%,#d2b45f 58%,#bd6b55 100%);border-radius:99px;transition:width .25s ease}
+.route-pressure small{display:block;color:#aebba6;font-size:9px;letter-spacing:.35px}
+.route-regroup{display:block;width:100%;max-width:360px;margin:10px auto;border-color:#b99b60;color:#e6d4a9}
